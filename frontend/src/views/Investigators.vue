@@ -16,8 +16,7 @@
     </n-empty>
 
     <div v-else class="card-list">
-      <div v-for="inv in investigators" :key="inv.id" class="inv-card"
-003e
+      <div v-for="inv in investigators" :key="inv.id" class="inv-card">
         <router-link :to="`/investigator/${inv.id}`">
           <div class="inv-header">
             <h3>{{ inv.name }}</h3>
@@ -43,7 +42,7 @@
 import { ref, onMounted } from 'vue'
 import api from '@/api/client'
 
-const investigators = ref([])
+const investigators = ref<any[]>([])
 const loading = ref(false)
 
 onMounted(async () => {
