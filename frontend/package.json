@@ -1,0 +1,39 @@
+{
+  "name": "coc-platform-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --ext .vue,.ts,.tsx --fix",
+    "prisma:seed": "ts-node prisma/seed.ts"
+  },
+  "dependencies": {
+    "vue": "^3.4.21",
+    "vue-router": "^4.3.0",
+    "pinia": "^2.1.7",
+    "axios": "^1.6.8",
+    "socket.io-client": "^4.7.5",
+    "naive-ui": "^2.38.1",
+    "vfonts": "^0.0.3",
+    "echarts": "^5.5.0",
+    "vue-echarts": "^6.6.9",
+    "dayjs": "^1.11.10"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.4",
+    "vite": "^5.2.0",
+    "typescript": "^5.4.5",
+    "vue-tsc": "^2.0.11",
+    "@types/node": "^20.12.7",
+    "eslint": "^8.57.0",
+    "@typescript-eslint/eslint-plugin": "^7.6.0",
+    "@typescript-eslint/parser": "^7.6.0",
+    "eslint-plugin-vue": "^9.24.0"
+  },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
+  }
+}

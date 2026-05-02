@@ -1,0 +1,294 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(uuid())
+  username      String    @unique
+  email         String?   @unique
+  passwordHash  String
+  nickname      String?
+  avatarUrl     String?
+  bio           String?
+  role          String    @default("PLAYER")
+  kpApprovedAt  DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  investigators Investigator[]
+  campaigns     Campaign[]       @relation("CampaignKp")
+  memberships   CampaignMember[]
+}
+
+model Investigator {
+  id                      String    @id @default(uuid())
+  userId                  String
+  name                    String
+  era                     String    @default("MODERN")
+  age                     Int       @default(25)
+  gender                  String?
+  residence               String?
+  birthplace              String?
+  currentTime             String?
+  str                     Int       @default(50)
+  con                     Int       @default(50)
+  siz                     Int       @default(50)
+  dex                     Int       @default(50)
+  app                     Int       @default(50)
+  int                     Int       @default(50)
+  pow                     Int       @default(50)
+  edu                     Int       @default(50)
+  luck                    Int       @default(50)
+  ageAdjustmentApplied    Boolean   @default(false)
+  eduImprovementRolls     Int       @default(0)
+  hp                      Int?
+  maxHp                   Int?
+  san                     Int?
+  maxSan                  Int?
+  mp                      Int?
+  maxMp                   Int?
+  mov                     Int?
+  db                      String?
+  build                   Int?
+  damageBonus             String?
+  majorWoundValue         Int?
+  tempHp                  Int       @default(0)
+  sanLossToday            Int       @default(0)
+  magicUsed               Int       @default(0)
+  mentalStability         Boolean   @default(false)
+  occupationId            Int?
+  creditRating            Int       @default(0)
+  livingStandard          String?
+  cash                    Int       @default(0)
+  assets                  String?
+  spendingLevel           Int       @default(0)
+  description             String?
+  belief                  String?
+  significantPeople       String?
+  meaningfulLocations     String?
+  treasuredPossessions    String?
+  traits                  String?
+  injuriesAndScars        String?
+  phobiasAndManias        String?
+  tomesSpellsArtifacts    String?
+  encountersWithStrange   String?
+  experiencePackage       String?
+  status                  String    @default("DRAFT")
+  campaignId              String?
+  version                 Int       @default(1)
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  user          User                @relation(fields: [userId], references: [id])
+  occupation    Occupation?         @relation(fields: [occupationId], references: [id])
+  skills        InvestigatorSkill[]
+  items         InvestigatorItem[]
+  versions      InvestigatorVersion[]
+}
+
+model InvestigatorVersion {
+  id              String      @id @default(uuid())
+  investigatorId  String
+  version         Int
+  data            String
+  changedBy       String?
+  changeReason    String?
+  createdAt       DateTime    @default(now())
+
+  investigator    Investigator @relation(fields: [investigatorId], references: [id], onDelete: Cascade)
+}
+
+model Skill {
+  id              Int                 @id @default(autoincrement())
+  name            String
+  nameEn          String?
+  category        String?
+  baseValue       Int                 @default(0)
+  description     String?
+  isRare          Boolean             @default(false)
+  isParent        Boolean             @default(false)
+  parentId        Int?
+  radarCategory   String?
+
+  investigatorSkills InvestigatorSkill[]
+  weapons         Weapon[]
+}
+
+model InvestigatorSkill {
+  id              String        @id @default(uuid())
+  investigatorId  String
+  skillId         Int
+  customName      String?
+  initial         Int           @default(0)
+  growth          Int           @default(0)
+  occupational    Int           @default(0)
+  interest        Int           @default(0)
+  isOccupational  Boolean       @default(false)
+  successMarked   Boolean       @default(false)
+
+  investigator    Investigator  @relation(fields: [investigatorId], references: [id], onDelete: Cascade)
+  skill           Skill         @relation(fields: [skillId], references: [id])
+
+  @@unique([investigatorId, skillId, customName])
+}
+
+model Occupation {
+  id                  Int             @id @default(autoincrement())
+  name                String
+  nameEn              String?
+  era                 String?
+  creditMin           Int             @default(0)
+  creditMax           Int             @default(99)
+  pointFormula        String?
+  pointFormulaDesc    String?
+  skillIds            String
+  anyTalentCount      Int             @default(0)
+  eraTalentCount      Int             @default(0)
+  description         String?
+  createdAt           DateTime        @default(now())
+
+  investigators       Investigator[]
+}
+
+model Weapon {
+  id              Int     @id @default(autoincrement())
+  name            String
+  category        String?
+  skillId         Int?
+  damageFormula   String
+  baseRange       String?
+  impale          Boolean @default(false)
+  attacksPerRound String?
+  ammoCapacity    Int?
+  malfunction     Int?
+  era             String?
+  description     String?
+
+  skill           Skill?  @relation(fields: [skillId], references: [id])
+}
+
+model Armor {
+  id              Int     @id @default(autoincrement())
+  name            String
+  armorValue      Int     @default(0)
+  movPenalty      Int     @default(0)
+  coverage        String?
+  applicableTo    String?
+  resistPuncture  Boolean @default(false)
+  era             String?
+  description     String?
+}
+
+model ItemTemplate {
+  id          Int     @id @default(autoincrement())
+  name        String
+  category    String
+  description String?
+  weight      Float?
+  stackable   Boolean @default(false)
+  maxStack    Int     @default(1)
+  usable      Boolean @default(false)
+  useEffect   String?
+  era         String?
+  price       Int     @default(0)
+  createdAt   DateTime @default(now())
+}
+
+model InvestigatorItem {
+  id                String      @id @default(uuid())
+  investigatorId    String
+  itemTemplateId    Int?
+  weaponId          Int?
+  armorId           Int?
+  customName        String?
+  location          String      @default("storage")
+  quantity          Int         @default(1)
+  currentAmmo       Int?
+  isJammed          Boolean     @default(false)
+  currentDurability Int?
+  description       String?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  investigator      Investigator @relation(fields: [investigatorId], references: [id], onDelete: Cascade)
+}
+
+model Campaign {
+  id              String          @id @default(uuid())
+  kpId            String
+  moduleId        String?
+  title           String
+  description     String?
+  maxPlayers      Int             @default(4)
+  era             String?
+  rollMethod      String          @default("DICE")
+  pointBuyTotal   Int?
+  customRules     String?
+  status          String          @default("RECRUITING")
+  isPublic        Boolean         @default(true)
+  aiEnabled       String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  kp              User            @relation("CampaignKp", fields: [kpId], references: [id])
+  members         CampaignMember[]
+}
+
+model CampaignMember {
+  id              String          @id @default(uuid())
+  campaignId      String
+  userId          String
+  investigatorId  String?
+  role            String          @default("PLAYER")
+  status          String          @default("PENDING")
+  joinedAt        DateTime        @default(now())
+
+  campaign        Campaign        @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  user            User            @relation(fields: [userId], references: [id])
+
+  @@unique([campaignId, userId])
+}
+
+model Phobia {
+  id          Int     @id @default(autoincrement())
+  rollMin     Int
+  rollMax     Int
+  name        String
+  nameEn      String?
+  description String?
+}
+
+model Mania {
+  id          Int     @id @default(autoincrement())
+  rollMin     Int
+  rollMax     Int
+  name        String
+  nameEn      String?
+  description String?
+}
+
+model InsanityEpisode {
+  id          Int     @id @default(autoincrement())
+  episodeType String
+  rollValue   Int?
+  name        String
+  description String?
+  duration    String?
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  userId      String?
+  campaignId  String?
+  action      String
+  targetType  String?
+  targetId    String?
+  details     String?
+  ipAddress   String?
+  createdAt   DateTime @default(now())
+}
