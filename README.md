@@ -46,53 +46,45 @@ COC-Platform/
 └── README.md
 ```
 
-## Phase 1 已完成
-- [x] 用户系统（注册/登录/JWT认证/权限）
+## Phase 1 已完成（2026-05-03）
+- [x] 用户系统（注册/登录/JWT/RefreshToken/权限守卫）
 - [x] 角色卡基础CRUD（基础信息/八大属性）
 - [x] 衍生属性自动计算（HP/SAN/MP/MOV/DB/Build/年龄补正）
-- [x] 技能系统（内置60+技能）
-- [x] 职业系统（内置20个常用职业）
-- [x] 车卡向导（基础信息→Roll属性→职业选择→背景）
-- [x] 骰子引擎（d100/属性Roll点/检定判定/奖励惩罚骰）
+- [x] 技能系统（内置60+技能，种子数据已导入）
+- [x] 职业系统（内置20个常用职业，种子数据已导入）
+- [x] 车卡向导（4步：基础信息→Roll属性→职业选择→背景）
+- [x] 骰子引擎（d100/属性Roll点/检定判定/奖励惩罚骰/幸运/SAN）
 - [x] 前端基础页面（首页/登录/注册/角色卡列表/创建/详情）
+- [x] 云服务器部署（Docker Compose + PostgreSQL + Redis + MinIO）
+- [x] 种子数据：60技能/20职业/26武器/4防具/20恐惧症/20躁狂症/10疯狂症状
+
+## 在线访问
+- **前端**：http://118.145.110.165
+- **后端API**：http://118.145.110.165/api
+- **GitHub**：https://github.com/lynn415415/coc.git
 
 ## 环境要求
-部署到云服务器前，需要安装：
 - Node.js 20+
-- PostgreSQL 16
-- Redis 7
-- Docker & Docker Compose（可选，用于容器化部署）
+- PostgreSQL 16（Docker 部署已内置）
+- Redis 7（Docker 部署已内置）
+- Docker & Docker Compose
 
-## 部署步骤
+## 部署步骤（云服务器）
 
-### 1. 安装依赖并构建
+### Docker Compose 部署（推荐）
 ```bash
-# 后端
-cd backend
-npm install
-npx prisma migrate dev --name init
-npx prisma db seed
-npm run start:prod
-
-# 前端
-cd ../frontend
-npm install
-npm run build
-```
-
-### 2. Docker Compose部署（推荐）
-```bash
+cd /opt/coc-platform
 docker compose up -d
 ```
 
-### 3. 环境变量
+### 环境变量
 后端 `.env`：
 ```
-DATABASE_URL=postgresql://coc:coc_password@localhost:5432/coc
-REDIS_URL=redis://localhost:6379
-JWT_SECRET=your_jwt_secret
-JWT_REFRESH_SECRET=your_refresh_secret
-MINIO_ENDPOINT=localhost
+DATABASE_URL=postgresql://coc:coc_password@postgres:5432/coc
+REDIS_URL=redis://redis:6379
+JWT_SECRET=coc_platform_jwt_secret_key_2026
+JWT_REFRESH_SECRET=coc_platform_refresh_secret_key_2026
+MINIO_ENDPOINT=minio
 MINIO_PORT=9000
 MINIO_ACCESS_KEY=cocminio
 MINIO_SECRET_KEY=cocminio_password
