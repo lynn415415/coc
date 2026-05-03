@@ -2,9 +2,9 @@
   <div class="auth-page">
     <div class="auth-card">
       <h2>注册</h2>
-      <n-form :model="form" @submit.prevent="handleRegister">
+      <div>
         <n-form-item label="用户名">
-          <n-input v-model:value="form.username" placeholder="请输入用户名" />
+          <n-input v-model:value="form.username" placeholder="请输入用户名" @keyup.enter="handleRegister" />
         </n-form-item>
         <n-form-item label="邮箱">
           <n-input v-model:value="form.email" placeholder="请输入邮箱（可选）" />
@@ -13,12 +13,12 @@
           <n-input v-model:value="form.nickname" placeholder="请输入昵称（可选）" />
         </n-form-item>
         <n-form-item label="密码">
-          <n-input v-model:value="form.password" type="password" placeholder="至少6位" />
+          <n-input v-model:value="form.password" type="password" placeholder="至少6位" @keyup.enter="handleRegister" />
         </n-form-item>
         <n-form-item>
-          <n-button type="primary" attr-type="submit" :loading="loading" block>注册</n-button>
+          <n-button type="primary" :loading="loading" block @click="handleRegister">注册</n-button>
         </n-form-item>
-      </n-form>
+      </div>
       <p class="tip">已有账号？<router-link to="/login">立即登录</router-link></p>
     </div>
   </div>

@@ -46,15 +46,15 @@
           <n-space vertical>
             <n-radio v-for="(set, idx) in rolledSets" :key="idx" :value="idx">
               <div class="set-row">
-                <span>STR {{ set.str }}</span>
-                <span>CON {{ set.con }}</span>
-                <span>SIZ {{ set.siz }}</span>
-                <span>DEX {{ set.dex }}</span>
-                <span>APP {{ set.app }}</span>
-                <span>INT {{ set.int }}</span>
-                <span>POW {{ set.pow }}</span>
-                <span>EDU {{ set.edu }}</span>
-                <span>LUCK {{ set.luck }}</span>
+                <span>{{ attrMap.str }} {{ set.str }}</span>
+                <span>{{ attrMap.con }} {{ set.con }}</span>
+                <span>{{ attrMap.siz }} {{ set.siz }}</span>
+                <span>{{ attrMap.dex }} {{ set.dex }}</span>
+                <span>{{ attrMap.app }} {{ set.app }}</span>
+                <span>{{ attrMap.int }} {{ set.int }}</span>
+                <span>{{ attrMap.pow }} {{ set.pow }}</span>
+                <span>{{ attrMap.edu }} {{ set.edu }}</span>
+                <span>{{ attrMap.luck }} {{ set.luck }}</span>
               </div>
             </n-radio>
           </n-space>
@@ -63,15 +63,15 @@
 
       <div v-if="selectedSetIndex !== null" class="attr-form">
         <n-form :model="form" inline>
-          <n-form-item label="STR"><n-input-number v-model:value="form.str" :min="1" :max="99" /></n-form-item>
-          <n-form-item label="CON"><n-input-number v-model:value="form.con" :min="1" :max="99" /></n-form-item>
-          <n-form-item label="SIZ"><n-input-number v-model:value="form.siz" :min="1" :max="99" /></n-form-item>
-          <n-form-item label="DEX"><n-input-number v-model:value="form.dex" :min="1" :max="99" /></n-form-item>
-          <n-form-item label="APP"><n-input-number v-model:value="form.app" :min="1" :max="99" /></n-form-item>
-          <n-form-item label="INT"><n-input-number v-model:value="form.int" :min="1" :max="99" /></n-form-item>
-          <n-form-item label="POW"><n-input-number v-model:value="form.pow" :min="1" :max="99" /></n-form-item>
-          <n-form-item label="EDU"><n-input-number v-model:value="form.edu" :min="1" :max="99" /></n-form-item>
-          <n-form-item label="LUCK"><n-input-number v-model:value="form.luck" :min="1" :max="99" /></n-form-item>
+          <n-form-item :label="attrMap.str"><n-input-number v-model:value="form.str" :min="1" :max="99" /></n-form-item>
+          <n-form-item :label="attrMap.con"><n-input-number v-model:value="form.con" :min="1" :max="99" /></n-form-item>
+          <n-form-item :label="attrMap.siz"><n-input-number v-model:value="form.siz" :min="1" :max="99" /></n-form-item>
+          <n-form-item :label="attrMap.dex"><n-input-number v-model:value="form.dex" :min="1" :max="99" /></n-form-item>
+          <n-form-item :label="attrMap.app"><n-input-number v-model:value="form.app" :min="1" :max="99" /></n-form-item>
+          <n-form-item :label="attrMap.int"><n-input-number v-model:value="form.int" :min="1" :max="99" /></n-form-item>
+          <n-form-item :label="attrMap.pow"><n-input-number v-model:value="form.pow" :min="1" :max="99" /></n-form-item>
+          <n-form-item :label="attrMap.edu"><n-input-number v-model:value="form.edu" :min="1" :max="99" /></n-form-item>
+          <n-form-item :label="attrMap.luck"><n-input-number v-model:value="form.luck" :min="1" :max="99" /></n-form-item>
         </n-form>
       </div>
     </div>
@@ -97,6 +97,7 @@
     </div>
 
     <div class="actions">
+      <n-button v-if="step === 0" @click="router.push('/investigators')">返回</n-button>
       <n-button v-if="step > 0" @click="step--">上一步</n-button>
       <n-button v-if="step < 3" type="primary" @click="step++">下一步</n-button>
       <n-button v-if="step === 3" type="primary" :loading="saving" @click="save">保存角色卡</n-button>
@@ -129,6 +130,11 @@ const eraOptions = [
 
 const occupationOptions = ref<{ label: string; value: number }[]>([])
 
+const attrMap: Record<string, string> = {
+  str: '力量', con: '体质', siz: '体型', dex: '敏捷',
+  app: '外貌', int: '智力', pow: '意志', edu: '教育', luck: '幸运',
+}
+
 const form = ref({
   name: '', era: 'MODERN', age: 25, gender: '', residence: '', birthplace: '',
   str: 50, con: 50, siz: 50, dex: 50, app: 50, int: 50, pow: 50, edu: 50, luck: 50,
@@ -145,7 +151,7 @@ onMounted(async () => {
 async function rollAttributes() {
   rolling.value = true
   try {
-    const res = await api.post('/dice/attributes')
+    const res = await api.post('/dice/attributes', {})
     rolledSets.value = res.data.sets || []
     selectedSetIndex.value = null
   } catch (e) {

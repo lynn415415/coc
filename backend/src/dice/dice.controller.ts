@@ -11,8 +11,8 @@ export class DiceController {
   }
 
   @Post('attributes')
-  async rollAttributes(@Body() body: { method: 'standard' | 'point_buy'; pointTotal?: number }) {
-    if (body.method === 'point_buy') {
+  async rollAttributes(@Body() body?: { method: 'standard' | 'point_buy'; pointTotal?: number }) {
+    if (body?.method === 'point_buy') {
       return { method: 'point_buy', pointTotal: body.pointTotal || 460 };
     }
     return {

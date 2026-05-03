@@ -2,17 +2,17 @@
   <div class="auth-page">
     <div class="auth-card">
       <h2>登录</h2>
-      <n-form :model="form" @submit.prevent="handleLogin">
+      <div>
         <n-form-item label="用户名">
-          <n-input v-model:value="form.username" placeholder="请输入用户名" />
+          <n-input v-model:value="form.username" placeholder="请输入用户名" @keyup.enter="handleLogin" />
         </n-form-item>
         <n-form-item label="密码">
-          <n-input v-model:value="form.password" type="password" placeholder="请输入密码" />
+          <n-input v-model:value="form.password" type="password" placeholder="请输入密码" @keyup.enter="handleLogin" />
         </n-form-item>
         <n-form-item>
-          <n-button type="primary" attr-type="submit" :loading="loading" block>登录</n-button>
+          <n-button type="primary" :loading="loading" block @click="handleLogin">登录</n-button>
         </n-form-item>
-      </n-form>
+      </div>
       <p class="tip">还没有账号？<router-link to="/register">立即注册</router-link></p>
     </div>
   </div>

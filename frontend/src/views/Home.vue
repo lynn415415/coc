@@ -1,7 +1,7 @@
 <template>
   <div class="home">
     <nav class="navbar">
-      <div class="logo">COC跑团平台</div>
+      <div class="logo">阿兹卡班休息室</div>
       <div class="nav-links">
         <template v-if="auth.isLoggedIn">
           <router-link to="/investigators">我的角色卡</router-link>
@@ -17,14 +17,14 @@
     </nav>
 
     <div class="hero">
-      <h1>克苏鲁的呼唤</h1>
-      <p>在线跑团平台 — 与朋友一起探索未知的恐怖</p>
+      <h1>阿兹卡班休息室</h1>
+      <p>COC七版在线跑团 — 与朋友一起直面不可名状的恐怖</p>
       <div class="actions">
         <router-link v-if="auth.isLoggedIn" to="/investigators">
           <n-button type="primary" size="large">创建调查员</n-button>
         </router-link>
         <router-link v-else to="/register">
-          <n-button type="primary" size="large">立即开始</n-button>
+          <n-button type="primary" size="large">踏入疯狂</n-button>
         </router-link>
       </div>
     </div>

@@ -1,5 +1,13 @@
 <template>
   <div v-if="inv" class="page">
+    <div class="back-bar">
+      <n-button text @click="$router.push('/investigators')">
+        <template #icon>
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        </template>
+        返回角色卡列表
+      </n-button>
+    </div>
     <div class="header">
       <h2>{{ inv.name }}</h2>
       <n-tag :type="statusType(inv.status)">{{ statusText(inv.status) }}</n-tag>
@@ -8,14 +16,14 @@
     <n-tabs type="line">
       <n-tab-pane name="attr" tab="属性">
         <div class="attr-grid">
-          <div class="attr-box"><label>STR</label><span>{{ inv.str }}</span></div>
-          <div class="attr-box"><label>CON</label><span>{{ inv.con }}</span></div>
-          <div class="attr-box"><label>SIZ</label><span>{{ inv.siz }}</span></div>
-          <div class="attr-box"><label>DEX</label><span>{{ inv.dex }}</span></div>
-          <div class="attr-box"><label>APP</label><span>{{ inv.app }}</span></div>
-          <div class="attr-box"><label>INT</label><span>{{ inv.int }}</span></div>
-          <div class="attr-box"><label>POW</label><span>{{ inv.pow }}</span></div>
-          <div class="attr-box"><label>EDU</label><span>{{ inv.edu }}</span></div>
+          <div class="attr-box"><label>{{ attrMap.str }}</label><span>{{ inv.str }}</span></div>
+          <div class="attr-box"><label>{{ attrMap.con }}</label><span>{{ inv.con }}</span></div>
+          <div class="attr-box"><label>{{ attrMap.siz }}</label><span>{{ inv.siz }}</span></div>
+          <div class="attr-box"><label>{{ attrMap.dex }}</label><span>{{ inv.dex }}</span></div>
+          <div class="attr-box"><label>{{ attrMap.app }}</label><span>{{ inv.app }}</span></div>
+          <div class="attr-box"><label>{{ attrMap.int }}</label><span>{{ inv.int }}</span></div>
+          <div class="attr-box"><label>{{ attrMap.pow }}</label><span>{{ inv.pow }}</span></div>
+          <div class="attr-box"><label>{{ attrMap.edu }}</label><span>{{ inv.edu }}</span></div>
         </div>
         <div class="derived">
           <div>HP: {{ inv.hp }}/{{ inv.maxHp }}</div>
@@ -51,6 +59,11 @@ import { useRoute } from 'vue-router'
 import { useMessage } from 'naive-ui'
 import api from '@/api/client'
 
+const attrMap: Record<string, string> = {
+  str: '力量', con: '体质', siz: '体型', dex: '敏捷',
+  app: '外貌', int: '智力', pow: '意志', edu: '教育',
+}
+
 const route = useRoute()
 const message = useMessage()
 const inv = ref<any>(null)
@@ -82,6 +95,7 @@ function statusText(status: string) {
 
 <style scoped>
 .page { max-width: 800px; margin: 0 auto; padding: 2rem; }
+.back-bar { margin-bottom: 1rem; }
 .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
 .attr-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
 .attr-box { background: #f9f9f5; padding: 1rem; border-radius: 8px; text-align: center; }
