@@ -35,9 +35,11 @@
 
     <!-- Step 2: Roll属性 -->
     <div v-if="step === 1" class="step-content">
-      <div class="step-hint">
-        <p>点击「掷骰生成属性组」获得5组随机属性，选择最满意的一组。</p>
-        <p>选中后可在下方微调（±5点以内），保存时系统会根据<strong>年龄</strong>自动应用年龄补正并计算衍生属性。</p>
+      <div class="mode-switch">
+        <n-radio-group v-model:value="rollMethod">
+          <n-radio-button value="dice">掷骰生成</n-radio-button>
+          <n-radio-button value="point_buy">购点法</n-radio-button>
+        </n-radio-group>
       </div>
 
       <div v-if="form.age" class="age-adjustment-hint">
@@ -45,70 +47,82 @@
         <p>{{ ageAdjustmentText }}</p>
       </div>
 
-      <div class="roll-section">
-        <n-button type="primary" @click="rollAttributes" :loading="rolling">掷骰生成属性组</n-button>
-        <n-button v-if="rolledSets.length > 0" @click="rollAttributes">重新掷骰</n-button>
+      <!-- 掷骰模式 -->
+      <div v-if="rollMethod === 'dice'">
+        <div class="step-hint">
+          <p>掷骰生成 5 组属性，选择最满意的一组。选定后可以直接交换两个属性（房规）。</p>
+          <p>幸运值单独掷骰决定。保存时系统会根据<strong>年龄</strong>自动应用年龄补正。</p>
+        </div>
+
+        <div class="roll-section">
+          <n-button type="primary" @click="rollAttributes" :loading="rolling">掷骰生成属性组</n-button>
+          <n-button v-if="rolledSets.length > 0" @click="rollAttributes">重新掷骰</n-button>
+        </div>
+
+        <div v-if="rolledSets.length > 0" class="sets">
+          <p class="sets-title">选择一组属性（点击圆圈选中）：</p>
+          <n-radio-group v-model:value="selectedSetIndex">
+            <n-space vertical>
+              <n-radio v-for="(set, idx) in rolledSets" :key="idx" :value="idx">
+                <div class="set-row">
+                  <span v-for="key in attrKeys" :key="key">{{ attrMap[key] }} {{ set[key] }}</span>
+                  <span>幸运 {{ set.luck }}</span>
+                </div>
+              </n-radio>
+            </n-space>
+          </n-radio-group>
+        </div>
+
+        <div v-if="selectedSet !== null" class="attr-form">
+          <p class="attr-form-title">已选属性（可交换两个属性值）：</p>
+          <div class="selected-attrs">
+            <div
+              v-for="key in attrKeys"
+              :key="key"
+              class="attr-chip"
+              :class="{ selected: swapFrom === key || swapTo === key }"
+              @click="handleSwap(key)"
+            >
+              <span class="chip-label">{{ attrMap[key] }}</span>
+              <span class="chip-value">{{ form[key] }}</span>
+            </div>
+            <div class="attr-chip luck">
+              <span class="chip-label">幸运</span>
+              <span class="chip-value">{{ form.luck }}</span>
+            </div>
+          </div>
+          <div v-if="swapFrom" class="swap-hint">
+            已选择「{{ attrMap[swapFrom] }} {{ form[swapFrom] }}」，点击另一个属性进行交换
+            <n-button size="tiny" @click="cancelSwap">取消</n-button>
+          </div>
+        </div>
       </div>
 
-      <div v-if="rolledSets.length > 0" class="sets">
-        <p class="sets-title">选择一组属性（点击圆圈选中）：</p>
-        <n-radio-group v-model:value="selectedSetIndex">
-          <n-space vertical>
-            <n-radio v-for="(set, idx) in rolledSets" :key="idx" :value="idx">
-              <div class="set-row">
-                <span>{{ attrMap.str }} {{ set.str }}</span>
-                <span>{{ attrMap.con }} {{ set.con }}</span>
-                <span>{{ attrMap.siz }} {{ set.siz }}</span>
-                <span>{{ attrMap.dex }} {{ set.dex }}</span>
-                <span>{{ attrMap.app }} {{ set.app }}</span>
-                <span>{{ attrMap.int }} {{ set.int }}</span>
-                <span>{{ attrMap.pow }} {{ set.pow }}</span>
-                <span>{{ attrMap.edu }} {{ set.edu }}</span>
-                <span>{{ attrMap.luck }} {{ set.luck }}</span>
-              </div>
-            </n-radio>
-          </n-space>
-        </n-radio-group>
-      </div>
+      <!-- 购点法模式 -->
+      <div v-else>
+        <div class="step-hint">
+          <p>购点法：将 <strong>460 点</strong>分配到 8 个属性，每个属性范围 <strong>40–90</strong>。</p>
+          <p>幸运值单独掷骰（3d6×5）。保存时系统会根据<strong>年龄</strong>自动应用年龄补正。</p>
+        </div>
 
-      <div v-if="selectedSetIndex !== null" class="attr-form">
-        <p class="attr-form-title">微调属性值（范围：Roll值 ±5）：</p>
+        <div class="point-buy-bar">
+          <div class="remaining" :class="{ over: remainingPoints < 0, exact: remainingPoints === 0 }">
+            剩余点数：{{ remainingPoints }} / 460
+          </div>
+          <n-button size="small" @click="resetPointBuy">重置</n-button>
+          <n-button size="small" type="primary" @click="rollLuck">掷幸运</n-button>
+        </div>
+
         <div class="attr-grid">
-          <div class="attr-cell">
-            <label>{{ attrMap.str }}</label>
-            <n-input-number v-model:value="form.str" :min="attrMin.str" :max="attrMax.str" />
+          <div v-for="key in attrKeys" :key="key" class="attr-cell">
+            <label>{{ attrMap[key] }}</label>
+            <n-slider v-model:value="pointBuy[key]" :min="40" :max="90" :step="1" />
+            <n-input-number v-model:value="pointBuy[key]" :min="40" :max="90" style="width: 90px" />
           </div>
-          <div class="attr-cell">
-            <label>{{ attrMap.con }}</label>
-            <n-input-number v-model:value="form.con" :min="attrMin.con" :max="attrMax.con" />
-          </div>
-          <div class="attr-cell">
-            <label>{{ attrMap.siz }}</label>
-            <n-input-number v-model:value="form.siz" :min="attrMin.siz" :max="attrMax.siz" />
-          </div>
-          <div class="attr-cell">
-            <label>{{ attrMap.dex }}</label>
-            <n-input-number v-model:value="form.dex" :min="attrMin.dex" :max="attrMax.dex" />
-          </div>
-          <div class="attr-cell">
-            <label>{{ attrMap.app }}</label>
-            <n-input-number v-model:value="form.app" :min="attrMin.app" :max="attrMax.app" />
-          </div>
-          <div class="attr-cell">
-            <label>{{ attrMap.int }}</label>
-            <n-input-number v-model:value="form.int" :min="attrMin.int" :max="attrMax.int" />
-          </div>
-          <div class="attr-cell">
-            <label>{{ attrMap.pow }}</label>
-            <n-input-number v-model:value="form.pow" :min="attrMin.pow" :max="attrMax.pow" />
-          </div>
-          <div class="attr-cell">
-            <label>{{ attrMap.edu }}</label>
-            <n-input-number v-model:value="form.edu" :min="attrMin.edu" :max="attrMax.edu" />
-          </div>
-          <div class="attr-cell">
-            <label>{{ attrMap.luck }}</label>
-            <n-input-number v-model:value="form.luck" :min="attrMin.luck" :max="attrMax.luck" />
+          <div class="attr-cell luck">
+            <label>幸运</label>
+            <n-input-number v-model:value="form.luck" :min="1" :max="99" style="width: 90px" />
+            <span v-if="form.luck" class="luck-hint">已掷出 {{ form.luck }}</span>
           </div>
         </div>
       </div>
@@ -158,6 +172,9 @@ const saving = ref(false)
 const rolledSets = ref<any[]>([])
 const selectedSetIndex = ref<number | null>(null)
 const occupations = ref<any[]>([])
+const rollMethod = ref<'dice' | 'point_buy'>('dice')
+const swapFrom = ref<AttrKey | ''>('')
+const swapTo = ref<AttrKey | ''>('')
 
 const eraOptions = [
   { label: '现代', value: 'MODERN' },
@@ -168,45 +185,41 @@ const eraOptions = [
 
 const occupationOptions = ref<{ label: string; value: number }[]>([])
 
-const attrMap: Record<string, string> = {
+type AttrKey = 'str' | 'con' | 'siz' | 'dex' | 'app' | 'int' | 'pow' | 'edu'
+const attrKeys: AttrKey[] = ['str', 'con', 'siz', 'dex', 'app', 'int', 'pow', 'edu']
+const attrMap: Record<AttrKey | string, string> = {
   str: '力量', con: '体质', siz: '体型', dex: '敏捷',
-  app: '外貌', int: '智力', pow: '意志', edu: '教育', luck: '幸运',
+  app: '外貌', int: '智力', pow: '意志', edu: '教育',
 }
 
-const form = ref({
+interface AttrValues {
+  str: number; con: number; siz: number; dex: number
+  app: number; int: number; pow: number; edu: number
+}
+
+const form = ref<AttrValues & {
+  name: string; era: string; age: number; gender: string
+  residence: string; birthplace: string; luck: number
+  occupationId: number | null; description: string; belief: string
+}>({
   name: '', era: 'MODERN', age: 25, gender: '', residence: '', birthplace: '',
   str: 50, con: 50, siz: 50, dex: 50, app: 50, int: 50, pow: 50, edu: 50, luck: 50,
-  occupationId: null as number | null,
+  occupationId: null,
   description: '', belief: '',
 })
 
-const baseValues = ref({
-  str: 50, con: 50, siz: 50, dex: 50, app: 50, int: 50, pow: 50, edu: 50, luck: 50,
+const pointBuy = ref<AttrValues>({
+  str: 50, con: 50, siz: 50, dex: 50, app: 50, int: 50, pow: 50, edu: 50,
 })
 
-const attrMin = computed(() => ({
-  str: Math.max(1, baseValues.value.str - 5),
-  con: Math.max(1, baseValues.value.con - 5),
-  siz: Math.max(1, baseValues.value.siz - 5),
-  dex: Math.max(1, baseValues.value.dex - 5),
-  app: Math.max(1, baseValues.value.app - 5),
-  int: Math.max(1, baseValues.value.int - 5),
-  pow: Math.max(1, baseValues.value.pow - 5),
-  edu: Math.max(1, baseValues.value.edu - 5),
-  luck: Math.max(1, baseValues.value.luck - 5),
-}))
+const selectedSet = computed(() =>
+  selectedSetIndex.value !== null ? rolledSets.value[selectedSetIndex.value] : null
+)
 
-const attrMax = computed(() => ({
-  str: Math.min(99, baseValues.value.str + 5),
-  con: Math.min(99, baseValues.value.con + 5),
-  siz: Math.min(99, baseValues.value.siz + 5),
-  dex: Math.min(99, baseValues.value.dex + 5),
-  app: Math.min(99, baseValues.value.app + 5),
-  int: Math.min(99, baseValues.value.int + 5),
-  pow: Math.min(99, baseValues.value.pow + 5),
-  edu: Math.min(99, baseValues.value.edu + 5),
-  luck: Math.min(99, baseValues.value.luck + 5),
-}))
+const remainingPoints = computed(() => {
+  const used = attrKeys.reduce((sum, k) => sum + pointBuy.value[k], 0)
+  return 460 - used
+})
 
 const ageAdjustmentText = computed(() => {
   const age = form.value.age
@@ -220,19 +233,32 @@ const ageAdjustmentText = computed(() => {
   return ''
 })
 
+// 同步购点法数值到 form
+watch(pointBuy, (pb) => {
+  if (rollMethod.value === 'point_buy') {
+    attrKeys.forEach((k) => {
+      (form.value as any)[k] = (pb as any)[k]
+    })
+  }
+}, { deep: true })
+
 watch(selectedSetIndex, (idx) => {
   if (idx !== null && rolledSets.value[idx]) {
     const set = rolledSets.value[idx]
-    form.value.str = set.str
-    form.value.con = set.con
-    form.value.siz = set.siz
-    form.value.dex = set.dex
-    form.value.app = set.app
-    form.value.int = set.int
-    form.value.pow = set.pow
-    form.value.edu = set.edu
+    attrKeys.forEach((k) => {
+      (form.value as any)[k] = set[k]
+    })
     form.value.luck = set.luck
-    baseValues.value = { ...set }
+    swapFrom.value = ''
+    swapTo.value = ''
+  }
+})
+
+watch(rollMethod, (method) => {
+  if (method === 'point_buy') {
+    attrKeys.forEach((k) => {
+      (form.value as any)[k] = (pointBuy.value as any)[k]
+    })
   }
 })
 
@@ -255,7 +281,51 @@ async function rollAttributes() {
   }
 }
 
+function handleSwap(key: AttrKey) {
+  if (!swapFrom.value) {
+    swapFrom.value = key
+    return
+  }
+  if (swapFrom.value === key) {
+    swapFrom.value = ''
+    return
+  }
+  swapTo.value = key
+  // 执行交换
+  const temp = (form.value as any)[swapFrom.value]
+  ;(form.value as any)[swapFrom.value] = (form.value as any)[swapTo.value]
+  ;(form.value as any)[swapTo.value] = temp
+  swapFrom.value = ''
+  swapTo.value = ''
+  message.success('属性已交换')
+}
+
+function cancelSwap() {
+  swapFrom.value = ''
+  swapTo.value = ''
+}
+
+function resetPointBuy() {
+  pointBuy.value = { str: 50, con: 50, siz: 50, dex: 50, app: 50, int: 50, pow: 50, edu: 50 }
+}
+
+async function rollLuck() {
+  try {
+    const res = await api.post('/dice/attributes', { method: 'standard' })
+    const set = res.data.sets?.[0]
+    if (set) {
+      form.value.luck = set.luck
+    }
+  } catch (e) {
+    message.error('掷幸运失败')
+  }
+}
+
 async function save() {
+  if (rollMethod.value === 'point_buy' && remainingPoints.value !== 0) {
+    message.error(`购点法剩余点数必须为0，当前剩余 ${remainingPoints.value} 点`)
+    return
+  }
   saving.value = true
   try {
     const data = { ...form.value }
@@ -274,6 +344,7 @@ async function save() {
 .page { max-width: 900px; margin: 0 auto; padding: 2rem; }
 .steps { margin-bottom: 2rem; }
 .step-content { background: white; padding: 2rem; border-radius: 12px; margin-bottom: 1.5rem; }
+.mode-switch { margin-bottom: 1.5rem; }
 .step-hint { background: #f6ffed; border: 1px solid #b7eb8f; border-radius: 8px; padding: 1rem 1.2rem; margin-bottom: 1.5rem; color: #333; }
 .step-hint p { margin: 0 0 0.4rem; line-height: 1.5; }
 .step-hint p:last-child { margin-bottom: 0; }
@@ -283,10 +354,23 @@ async function save() {
 .set-row { display: flex; gap: 0.75rem; font-size: 0.9rem; flex-wrap: wrap; }
 .attr-form { background: #f9f9f5; padding: 1.2rem; border-radius: 8px; }
 .attr-form-title { font-weight: 500; margin-bottom: 0.75rem; color: #333; }
-.attr-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; }
-.attr-cell { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; }
+.selected-attrs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.75rem; }
+.attr-chip { background: #fff; border: 2px solid #e8e8e3; border-radius: 8px; padding: 0.6rem; text-align: center; cursor: pointer; transition: all 0.2s; }
+.attr-chip:hover { border-color: #18a058; }
+.attr-chip.selected { border-color: #18a058; background: #f6ffed; }
+.attr-chip.luck { cursor: default; opacity: 0.8; }
+.attr-chip.luck:hover { border-color: #e8e8e3; }
+.chip-label { display: block; font-size: 0.8rem; color: #888; margin-bottom: 0.2rem; }
+.chip-value { display: block; font-size: 1.2rem; font-weight: 600; color: #333; }
+.swap-hint { margin-top: 0.75rem; font-size: 0.85rem; color: #666; display: flex; gap: 0.5rem; align-items: center; }
+.point-buy-bar { display: flex; gap: 1rem; align-items: center; margin-bottom: 1.5rem; }
+.remaining { font-size: 1.1rem; font-weight: 600; }
+.remaining.over { color: #d9534f; }
+.remaining.exact { color: #18a058; }
+.attr-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+.attr-cell { display: flex; flex-direction: column; gap: 0.4rem; padding: 0.75rem; background: #f9f9f5; border-radius: 8px; }
 .attr-cell label { font-size: 0.9rem; color: #555; font-weight: 500; }
-.attr-cell .n-input-number { width: 120px; }
+.luck-hint { font-size: 0.8rem; color: #888; }
 .actions { display: flex; gap: 1rem; justify-content: flex-end; }
 .tip { color: #999; font-size: 0.9rem; }
 .age-adjustment-hint { background: #fff7e6; border: 1px solid #ffd591; border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 1.5rem; }
