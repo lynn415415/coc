@@ -27,8 +27,20 @@ const router = createRouter({
     },
     {
       path: '/campaigns',
-      name: 'Campaigns',
-      component: () => import('@/views/Campaigns.vue'),
+      name: 'CampaignList',
+      component: () => import('@/views/CampaignList.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/campaigns/:id',
+      name: 'CampaignDetail',
+      component: () => import('@/views/CampaignDetail.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/room/:campaignId',
+      name: 'CampaignRoom',
+      component: () => import('@/views/CampaignRoom.vue'),
       meta: { requiresAuth: true },
     },
   ],

@@ -7,6 +7,13 @@ import { InvestigatorsModule } from './investigators/investigators.module';
 import { SkillsModule } from './skills/skills.module';
 import { OccupationsModule } from './occupations/occupations.module';
 import { DiceModule } from './dice/dice.module';
+import { CampaignsModule } from './campaigns/campaigns.module';
+import { ScenesModule } from './scenes/scenes.module';
+import { MessagesModule } from './messages/messages.module';
+import { ChecksModule } from './checks/checks.module';
+import { QuickPanelModule } from './quick-panel/quick-panel.module';
+import { ActionsModule } from './actions/actions.module';
+import { ItemsModule } from './items/items.module';
 
 @Module({
   imports: [
@@ -18,6 +25,13 @@ import { DiceModule } from './dice/dice.module';
     SkillsModule,
     OccupationsModule,
     DiceModule,
+    CampaignsModule,
+    ScenesModule,
+    MessagesModule,
+    ChecksModule,
+    QuickPanelModule,
+    ActionsModule,
+    ItemsModule,
   ],
 })
 export class AppModule {}
