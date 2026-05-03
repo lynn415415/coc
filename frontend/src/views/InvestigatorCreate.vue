@@ -50,13 +50,14 @@
       <!-- 掷骰模式 -->
       <div v-if="rollMethod === 'dice'">
         <div class="step-hint">
-          <p>掷骰生成 5 组属性，选择最满意的一组。选定后可以直接交换两个属性（房规）。</p>
-          <p>幸运值单独掷骰决定。保存时系统会根据<strong>年龄</strong>自动应用年龄补正。</p>
+          <p>掷骰生成 5 组属性，选择最满意的一组。<strong>掷骰后不可重Roll</strong>。</p>
+          <p>幸运值随属性组一起掷出。保存时系统会根据<strong>年龄</strong>自动应用年龄补正。</p>
         </div>
 
         <div class="roll-section">
-          <n-button type="primary" @click="rollAttributes" :loading="rolling">掷骰生成属性组</n-button>
-          <n-button v-if="rolledSets.length > 0" @click="rollAttributes">重新掷骰</n-button>
+          <n-button type="primary" @click="rollAttributes" :loading="rolling" :disabled="rolledSets.length > 0">
+            {{ rolledSets.length > 0 ? '已生成（不可重Roll）' : '掷骰生成属性组' }}
+          </n-button>
         </div>
 
         <div v-if="rolledSets.length > 0" class="sets">
@@ -74,26 +75,16 @@
         </div>
 
         <div v-if="selectedSet !== null" class="attr-form">
-          <p class="attr-form-title">已选属性（可交换两个属性值）：</p>
+          <p class="attr-form-title">已选属性：</p>
           <div class="selected-attrs">
-            <div
-              v-for="key in attrKeys"
-              :key="key"
-              class="attr-chip"
-              :class="{ selected: swapFrom === key || swapTo === key }"
-              @click="handleSwap(key)"
-            >
+            <div v-for="key in attrKeys" :key="key" class="attr-chip readonly">
               <span class="chip-label">{{ attrMap[key] }}</span>
               <span class="chip-value">{{ form[key] }}</span>
             </div>
-            <div class="attr-chip luck">
+            <div class="attr-chip luck readonly">
               <span class="chip-label">幸运</span>
               <span class="chip-value">{{ form.luck }}</span>
             </div>
-          </div>
-          <div v-if="swapFrom" class="swap-hint">
-            已选择「{{ attrMap[swapFrom] }} {{ form[swapFrom] }}」，点击另一个属性进行交换
-            <n-button size="tiny" @click="cancelSwap">取消</n-button>
           </div>
         </div>
       </div>
@@ -173,8 +164,6 @@ const rolledSets = ref<any[]>([])
 const selectedSetIndex = ref<number | null>(null)
 const occupations = ref<any[]>([])
 const rollMethod = ref<'dice' | 'point_buy'>('dice')
-const swapFrom = ref<AttrKey | ''>('')
-const swapTo = ref<AttrKey | ''>('')
 
 const eraOptions = [
   { label: '现代', value: 'MODERN' },
@@ -249,8 +238,6 @@ watch(selectedSetIndex, (idx) => {
       (form.value as any)[k] = set[k]
     })
     form.value.luck = set.luck
-    swapFrom.value = ''
-    swapTo.value = ''
   }
 })
 
@@ -279,30 +266,6 @@ async function rollAttributes() {
   } finally {
     rolling.value = false
   }
-}
-
-function handleSwap(key: AttrKey) {
-  if (!swapFrom.value) {
-    swapFrom.value = key
-    return
-  }
-  if (swapFrom.value === key) {
-    swapFrom.value = ''
-    return
-  }
-  swapTo.value = key
-  // 执行交换
-  const temp = (form.value as any)[swapFrom.value]
-  ;(form.value as any)[swapFrom.value] = (form.value as any)[swapTo.value]
-  ;(form.value as any)[swapTo.value] = temp
-  swapFrom.value = ''
-  swapTo.value = ''
-  message.success('属性已交换')
-}
-
-function cancelSwap() {
-  swapFrom.value = ''
-  swapTo.value = ''
 }
 
 function resetPointBuy() {
@@ -355,14 +318,11 @@ async function save() {
 .attr-form { background: #f9f9f5; padding: 1.2rem; border-radius: 8px; }
 .attr-form-title { font-weight: 500; margin-bottom: 0.75rem; color: #333; }
 .selected-attrs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.75rem; }
-.attr-chip { background: #fff; border: 2px solid #e8e8e3; border-radius: 8px; padding: 0.6rem; text-align: center; cursor: pointer; transition: all 0.2s; }
-.attr-chip:hover { border-color: #18a058; }
-.attr-chip.selected { border-color: #18a058; background: #f6ffed; }
-.attr-chip.luck { cursor: default; opacity: 0.8; }
-.attr-chip.luck:hover { border-color: #e8e8e3; }
+.attr-chip { background: #fff; border: 2px solid #e8e8e3; border-radius: 8px; padding: 0.6rem; text-align: center; transition: all 0.2s; }
+.attr-chip.readonly { cursor: default; }
+.attr-chip.luck { opacity: 0.8; }
 .chip-label { display: block; font-size: 0.8rem; color: #888; margin-bottom: 0.2rem; }
 .chip-value { display: block; font-size: 1.2rem; font-weight: 600; color: #333; }
-.swap-hint { margin-top: 0.75rem; font-size: 0.85rem; color: #666; display: flex; gap: 0.5rem; align-items: center; }
 .point-buy-bar { display: flex; gap: 1rem; align-items: center; margin-bottom: 1.5rem; }
 .remaining { font-size: 1.1rem; font-weight: 600; }
 .remaining.over { color: #d9534f; }
