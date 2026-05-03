@@ -44,8 +44,17 @@ model Investigator {
   pow                     Int       @default(50)
   edu                     Int       @default(50)
   luck                    Int       @default(50)
-  ageAdjustmentApplied    Boolean   @default(false)
+  baseStr                 Int?
+  baseCon                 Int?
+  baseSiz                 Int?
+  baseDex                 Int?
+  baseApp                 Int?
+  baseInt                 Int?
+  basePow                 Int?
+  baseEdu                 Int?
+  baseLuck                Int?
   eduImprovementRolls     Int       @default(0)
+  eduImprovementResults   String?
   hp                      Int?
   maxHp                   Int?
   san                     Int?
