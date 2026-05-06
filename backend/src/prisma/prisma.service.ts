@@ -1,14 +1,19 @@
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import { PrismaLibSql } from '@prisma/adapter-libsql';
 import { PrismaClient } from '@prisma/client';
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   constructor() {
-    const adapter = new PrismaLibSql({
-      url: process.env['DATABASE_URL'] || 'file:./prisma/dev.db',
-    });
-    super({ adapter });
+    const dbUrl = process.env['DATABASE_URL'] || 'file:./prisma/dev.db';
+    if (dbUrl.startsWith('file:')) {
+      // Local SQLite: use libsql adapter
+      const { PrismaLibSql } = require('@prisma/adapter-libsql');
+      const adapter = new PrismaLibSql({ url: dbUrl });
+      super({ adapter });
+    } else {
+      // PostgreSQL or other: use default PrismaClient (reads DATABASE_URL from env)
+      super();
+    }
   }
 
   async onModuleInit() {
