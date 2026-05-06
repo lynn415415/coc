@@ -11,8 +11,12 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
       const adapter = new PrismaLibSql({ url: dbUrl });
       super({ adapter });
     } else {
-      // PostgreSQL or other: use default PrismaClient (reads DATABASE_URL from env)
-      super();
+      // PostgreSQL: use pg adapter
+      const { PrismaPg } = require('@prisma/adapter-pg');
+      const { Pool } = require('pg');
+      const pool = new Pool({ connectionString: dbUrl });
+      const adapter = new PrismaPg(pool);
+      super({ adapter });
     }
   }
 
