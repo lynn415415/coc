@@ -1,5 +1,13 @@
 import { Injectable } from '@nestjs/common';
 
+export interface RawDice {
+  tensDigits: number[];
+  onesDigit: number;
+  keptTensIndex: number;
+  bonusDice: number;
+  penaltyDice: number;
+}
+
 export interface CheckResult {
   roll: number;
   targetValue: number;
@@ -8,6 +16,7 @@ export interface CheckResult {
   isFumble: boolean;
   successLevel: 'critical' | 'success' | 'failure' | 'fumble';
   description: string;
+  rawDice?: RawDice;
 }
 
 export interface RollResult {
@@ -57,24 +66,42 @@ export class DiceService {
   skillCheck(targetValue: number, bonusDice = 0, penaltyDice = 0, luckSpent = 0): CheckResult {
     let roll = this.d100().value;
     const effectiveTarget = targetValue + luckSpent;
+    let rawDice: RawDice | undefined;
 
     // 奖励/惩罚骰
     if (bonusDice > 0 || penaltyDice > 0) {
       const extraDice = bonusDice - penaltyDice;
       const tensDigit = Math.floor(roll / 10);
       const onesDigit = roll % 10;
+      const tensDigits: number[] = [tensDigit];
       let bestTens = tensDigit;
       let worstTens = tensDigit;
+      let keptTensIndex = 0;
 
       for (let i = 0; i < Math.abs(extraDice); i++) {
         const extraTens = Math.floor(this.rng() * 10);
-        if (extraTens < bestTens) bestTens = extraTens;
-        if (extraTens > worstTens) worstTens = extraTens;
+        tensDigits.push(extraTens);
+        if (extraTens < bestTens) {
+          bestTens = extraTens;
+          if (extraDice > 0) keptTensIndex = tensDigits.length - 1;
+        }
+        if (extraTens > worstTens) {
+          worstTens = extraTens;
+          if (extraDice < 0) keptTensIndex = tensDigits.length - 1;
+        }
       }
 
       const finalTens = extraDice > 0 ? bestTens : worstTens;
       roll = finalTens * 10 + onesDigit;
       if (roll === 0) roll = 100;
+
+      rawDice = {
+        tensDigits,
+        onesDigit,
+        keptTensIndex,
+        bonusDice,
+        penaltyDice,
+      };
     }
 
     const fifth = Math.floor(effectiveTarget / 5);
@@ -104,6 +131,7 @@ export class DiceService {
       isFumble,
       successLevel,
       description,
+      rawDice,
     };
   }
 

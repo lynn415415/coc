@@ -26,6 +26,12 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/investigator/:id/edit',
+      name: 'InvestigatorEdit',
+      component: () => import('@/views/InvestigatorCreate.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/campaigns',
       name: 'CampaignList',
       component: () => import('@/views/CampaignList.vue'),
@@ -41,6 +47,12 @@ const router = createRouter({
       path: '/room/:campaignId',
       name: 'CampaignRoom',
       component: () => import('@/views/CampaignRoom.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/config',
+      name: 'ConfigLibrary',
+      component: () => import('@/views/ConfigLibrary.vue'),
       meta: { requiresAuth: true },
     },
   ],

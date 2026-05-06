@@ -101,14 +101,14 @@ onMounted(load)
 </script>
 
 <style scoped>
-.quick-panel { padding: 0.75rem; }
-h4 { margin-bottom: 0.75rem; font-size: 0.9rem; }
+.quick-panel { padding: 0.75rem; color: #c0c0c8; }
+h4 { margin-bottom: 0.75rem; font-size: 0.9rem; color: #e0e0e8; }
 .slot-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; margin-bottom: 0.75rem; }
-.slot { height: 56px; border: 1px dashed #ccc; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; }
-.slot:hover { border-color: #18a058; background: #f6ffed; }
-.slot-empty { color: #ccc; font-size: 1.2rem; }
+.slot { height: 56px; border: 1px dashed #4a4a5a; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; background: #222233; }
+.slot:hover { border-color: #c49a6c; background: #2a2a3e; }
+.slot-empty { color: #666; font-size: 1.2rem; }
 .slot-content { text-align: center; }
-.slot-label { font-size: 0.75rem; color: #333; }
+.slot-label { font-size: 0.75rem; color: #e0e0e8; }
 .config-row { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem; }
-.config-index { width: 16px; font-size: 0.8rem; color: #999; }
+.config-index { width: 16px; font-size: 0.8rem; color: #888; }
 </style>

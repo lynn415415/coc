@@ -23,4 +23,16 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-vue': ['vue', 'vue-router', 'pinia'],
+          'vendor-naive': ['naive-ui'],
+          'vendor-fabric': ['fabric'],
+          'vendor-socket': ['socket.io-client'],
+        },
+      },
+    },
+  },
 })

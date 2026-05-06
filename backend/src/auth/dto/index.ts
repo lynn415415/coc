@@ -15,6 +15,10 @@ export class RegisterDto {
   @IsString()
   @IsOptional()
   nickname?: string;
+
+  @IsString()
+  @IsOptional()
+  inviteCode?: string;
 }
 
 export class LoginDto {

@@ -6,6 +6,7 @@
         <template v-if="auth.isLoggedIn">
           <router-link to="/investigators">我的角色卡</router-link>
           <router-link to="/campaigns">跑团</router-link>
+          <router-link to="/config">配置库</router-link>
           <span class="user-info">{{ auth.user?.nickname }}</span>
           <n-button size="small" @click="auth.logout()">退出</n-button>
         </template>
@@ -43,12 +44,55 @@
         <p>实时聊天、骰子检定、战斗轮、地图系统、线索共享</p>
       </div>
     </div>
+
+    <!-- Pixel Cat (right side, permanent for invited users) -->
+    <div v-if="hasInviteCode" class="pixel-cat-wrapper">
+      <img src="/pixel-cat.svg" alt="像素猫" class="pixel-cat" />
+    </div>
+
+    <!-- Welcome Modal -->
+    <n-modal v-model:show="showWelcome" preset="card" style="width: 400px" title="欢迎回来">
+      <div class="welcome-content">
+        <p class="welcome-msg">{{ welcomeMsg }}</p>
+        <img v-if="welcomeImageUrl" :src="welcomeImageUrl" alt="欢迎图片" class="welcome-img" />
+      </div>
+    </n-modal>
   </div>
 </template>
 
 <script setup lang="ts">
+import { ref, onMounted, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import api from '@/api/client'
+
 const auth = useAuthStore()
+const hasInviteCode = ref(false)
+const showWelcome = ref(false)
+const welcomeMsg = ref('')
+const welcomeImageUrl = ref('')
+
+async function fetchWelcomeInfo() {
+  if (!auth.isLoggedIn) return
+  try {
+    const res = await api.get('/invite-codes/welcome')
+    if (res.data) {
+      hasInviteCode.value = true
+      welcomeMsg.value = res.data.welcomeMsg
+      welcomeImageUrl.value = res.data.imageUrl
+      showWelcome.value = true
+    }
+  } catch {
+    // No invite code attached
+  }
+}
+
+onMounted(() => {
+  fetchWelcomeInfo()
+})
+
+watch(() => auth.isLoggedIn, (val) => {
+  if (val) fetchWelcomeInfo()
+})
 </script>
 
 <style scoped>
@@ -82,4 +126,31 @@ const auth = useAuthStore()
 }
 .feature-card h3 { color: #8B4513; margin-bottom: 0.75rem; }
 .feature-card p { color: #666; line-height: 1.6; }
+
+/* Pixel Cat */
+.pixel-cat-wrapper {
+  position: fixed; right: 2rem; bottom: 2rem; z-index: 100;
+  animation: catBounce 2s ease-in-out infinite;
+}
+.pixel-cat {
+  width: 128px; height: 128px;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.pixel-cat:hover { transform: scale(1.1); }
+
+@keyframes catBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+/* Welcome Modal */
+.welcome-content { text-align: center; }
+.welcome-msg {
+  font-size: 1.2rem; color: #8B4513; font-weight: 600;
+  margin-bottom: 1rem; line-height: 1.6;
+}
+.welcome-img { max-width: 100%; border-radius: 8px; }
 </style>

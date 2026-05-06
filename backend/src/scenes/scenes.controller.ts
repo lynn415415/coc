@@ -39,6 +39,11 @@ export class ScenesController {
     return this.service.delete(sceneId, user.userId);
   }
 
+  @Get('scenes/:sceneId')
+  async get(@Param('sceneId') sceneId: string) {
+    return this.service.get(sceneId);
+  }
+
   @Post('campaigns/:campaignId/switch-scene/:sceneId')
   async switchScene(
     @CurrentUser() user: { userId: string },

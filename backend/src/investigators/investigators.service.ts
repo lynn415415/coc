@@ -36,8 +36,48 @@ export class InvestigatorsService {
         basePow: base.pow,
         baseEdu: base.edu,
         baseLuck: base.luck,
+        occupationId: dto.occupationId ?? null,
+        creditRating: this.clamp(dto.creditRating ?? 0, 0, 99),
+        cash: this.clamp(dto.cash ?? 0, 0, 999999999),
+        assets: dto.assets ?? 0,
+        spendingLevel: this.clamp(dto.spendingLevel ?? 0, 0, 999999999),
+        livingStandard: dto.livingStandard,
+        description: dto.description,
+        belief: dto.belief,
+        significantPeople: dto.significantPeople,
+        meaningfulLocations: dto.meaningfulLocations,
+        treasuredPossessions: dto.treasuredPossessions,
+        traits: dto.traits,
+        injuriesAndScars: dto.injuriesAndScars,
+        phobiasAndManias: dto.phobiasAndManias,
+        tomesSpellsArtifacts: dto.tomesSpellsArtifacts,
+        encountersWithStrange: dto.encountersWithStrange,
+        alliesAndOrganizations: dto.alliesAndOrganizations,
+        spells: dto.spells,
+        notes: dto.notes,
       },
     });
+
+    if (dto.skills && Array.isArray(dto.skills)) {
+      const skillData = dto.skills
+        .filter((s: any) => s.skillId)
+        .map((s: any) => ({
+          investigatorId: inv.id,
+          skillId: Number(s.skillId),
+          customName: s.customName || null,
+          initial: this.clamp(s.initial ?? 0, 0, 99),
+          growth: this.clamp(s.growth ?? 0, 0, 99),
+          occupational: this.clamp(s.occupational ?? 0, 0, 99),
+          interest: this.clamp(s.interest ?? 0, 0, 99),
+          isOccupational: !!s.isOccupational,
+        }));
+      if (skillData.length > 0) {
+        await this.prisma.investigatorSkill.createMany({ data: skillData });
+      }
+    }
+
+    await this.saveEquipments(inv.id, dto);
+
     return this.calculateDerived(inv.id);
   }
 
@@ -59,7 +99,17 @@ export class InvestigatorsService {
       include: {
         skills: { include: { skill: true } },
         occupation: true,
-        items: true,
+        items: {
+          include: {
+            itemTemplate: true,
+            weapon: true,
+            armor: true,
+          },
+        },
+        weapons: { include: { weapon: true } },
+        armors: { include: { armor: true } },
+        vehicles: { include: { vehicle: true } },
+        otherAssets: true,
       },
     });
     if (!inv) throw new NotFoundException('调查员不存在');
@@ -78,10 +128,13 @@ export class InvestigatorsService {
     const data: any = {};
     const fields = [
       'name', 'era', 'age', 'gender', 'residence', 'birthplace',
-      'occupationId', 'creditRating', 'description', 'belief',
+      'occupationId', 'creditRating', 'cash', 'assets', 'spendingLevel', 'livingStandard',
+      'description', 'belief',
       'significantPeople', 'meaningfulLocations', 'treasuredPossessions',
       'traits', 'injuriesAndScars', 'phobiasAndManias',
       'tomesSpellsArtifacts', 'encountersWithStrange',
+      'alliesAndOrganizations', 'spells', 'notes',
+      'avatarUrl',
     ];
     fields.forEach((f) => { if (dto[f] !== undefined) data[f] = dto[f]; });
 
@@ -99,7 +152,71 @@ export class InvestigatorsService {
     const ageChanged = dto.age !== undefined && dto.age !== inv.age;
 
     await this.prisma.investigator.update({ where: { id }, data });
+    await this.saveEquipments(id, dto);
     return this.calculateDerived(id, ageChanged);
+  }
+
+  private async saveEquipments(investigatorId: string, dto: any) {
+    if (dto.weapons !== undefined) {
+      await this.prisma.investigatorWeapon.deleteMany({ where: { investigatorId } });
+      if (Array.isArray(dto.weapons) && dto.weapons.length > 0) {
+        await this.prisma.investigatorWeapon.createMany({
+          data: dto.weapons.map((w: any) => ({
+            investigatorId,
+            weaponId: Number(w.weaponId),
+            customName: w.customName || null,
+            successRate: this.clamp(w.successRate ?? 0, 0, 99),
+            currentAmmo: w.currentAmmo !== undefined ? Number(w.currentAmmo) : null,
+            isJammed: !!w.isJammed,
+            description: w.description || null,
+          })),
+        });
+      }
+    }
+
+    if (dto.armors !== undefined) {
+      await this.prisma.investigatorArmor.deleteMany({ where: { investigatorId } });
+      if (Array.isArray(dto.armors) && dto.armors.length > 0) {
+        await this.prisma.investigatorArmor.createMany({
+          data: dto.armors.map((a: any) => ({
+            investigatorId,
+            armorId: Number(a.armorId),
+            currentDurability: a.currentDurability !== undefined ? Number(a.currentDurability) : null,
+            isEquipped: !!a.isEquipped,
+            description: a.description || null,
+          })),
+        });
+      }
+    }
+
+    if (dto.vehicles !== undefined) {
+      await this.prisma.investigatorVehicle.deleteMany({ where: { investigatorId } });
+      if (Array.isArray(dto.vehicles) && dto.vehicles.length > 0) {
+        await this.prisma.investigatorVehicle.createMany({
+          data: dto.vehicles.map((v: any) => ({
+            investigatorId,
+            vehicleId: Number(v.vehicleId),
+            customName: v.customName || null,
+            description: v.description || null,
+          })),
+        });
+      }
+    }
+
+    if (dto.otherAssets !== undefined) {
+      await this.prisma.investigatorAsset.deleteMany({ where: { investigatorId } });
+      if (Array.isArray(dto.otherAssets) && dto.otherAssets.length > 0) {
+        await this.prisma.investigatorAsset.createMany({
+          data: dto.otherAssets.map((a: any) => ({
+            investigatorId,
+            category: a.category || 'other',
+            name: a.name || '未命名',
+            value: this.clamp(a.value ?? 0, 0, 999999999),
+            description: a.description || null,
+          })),
+        });
+      }
+    }
   }
 
   async submit(id: string) {
@@ -109,7 +226,7 @@ export class InvestigatorsService {
 
     return this.prisma.investigator.update({
       where: { id },
-      data: { status: 'PENDING' },
+      data: { status: 'APPROVED' },
     });
   }
 
@@ -215,6 +332,15 @@ export class InvestigatorsService {
     });
 
     return updated;
+  }
+
+  async remove(id: string, userId: string) {
+    const inv = await this.prisma.investigator.findUnique({ where: { id } });
+    if (!inv) throw new NotFoundException('调查员不存在');
+    if (inv.userId !== userId) throw new BadRequestException('只能删除自己的角色卡');
+
+    await this.prisma.investigator.delete({ where: { id } });
+    return { success: true };
   }
 
   private clamp(val: number, min: number, max: number) {

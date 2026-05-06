@@ -15,10 +15,12 @@ model User {
   avatarUrl     String?
   bio           String?
   role          String    @default("PLAYER")
+  inviteCodeId  String?
   kpApprovedAt  DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
+  inviteCode    InviteCode? @relation(fields: [inviteCodeId], references: [id])
   investigators Investigator[]
   campaigns     Campaign[]       @relation("CampaignKp")
   memberships   CampaignMember[]
@@ -29,6 +31,7 @@ model Investigator {
   id                      String    @id @default(uuid())
   userId                  String
   name                    String
+  avatarUrl               String?
   era                     String    @default("MODERN")
   age                     Int       @default(25)
   gender                  String?
@@ -74,7 +77,7 @@ model Investigator {
   creditRating            Int       @default(0)
   livingStandard          String?
   cash                    Int       @default(0)
-  assets                  String?
+  assets                  Int       @default(0)
   spendingLevel           Int       @default(0)
   description             String?
   belief                  String?
@@ -86,6 +89,9 @@ model Investigator {
   phobiasAndManias        String?
   tomesSpellsArtifacts    String?
   encountersWithStrange   String?
+  alliesAndOrganizations  String?
+  spells                  String?
+  notes                   String?
   experiencePackage       String?
   status                  String    @default("DRAFT")
   campaignId              String?
@@ -97,6 +103,10 @@ model Investigator {
   occupation    Occupation?         @relation(fields: [occupationId], references: [id])
   skills        InvestigatorSkill[]
   items         InvestigatorItem[]
+  weapons       InvestigatorWeapon[]
+  armors        InvestigatorArmor[]
+  vehicles      InvestigatorVehicle[]
+  otherAssets   InvestigatorAsset[]
   versions      InvestigatorVersion[]
   rollRecords   RollRecord[]
   campaignMembers CampaignMember[]
@@ -171,17 +181,22 @@ model Weapon {
   id              Int     @id @default(autoincrement())
   name            String
   category        String?
+  skillName       String?
   skillId         Int?
   damageFormula   String
   baseRange       String?
   impale          Boolean @default(false)
   attacksPerRound String?
-  ammoCapacity    Int?
+  ammoCapacity    String?
   malfunction     Int?
   era             String?
+  price           String?
+  inventionYear   String?
   description     String?
 
   skill           Skill?  @relation(fields: [skillId], references: [id])
+  investigatorItems InvestigatorItem[]
+  investigatorWeapons InvestigatorWeapon[]
 }
 
 model Armor {
@@ -193,7 +208,98 @@ model Armor {
   applicableTo    String?
   resistPuncture  Boolean @default(false)
   era             String?
+  price           String?
+  category        String?
   description     String?
+
+  investigatorItems InvestigatorItem[]
+  investigatorArmors InvestigatorArmor[]
+}
+
+model Vehicle {
+  id              Int     @id @default(autoincrement())
+  name            String
+  skill           String?
+  mov             Int?
+  build           String?
+  passengerArmor  Int?
+  passengers      String?
+  driverBuild     String?
+  riderBuild      String?
+  era             String?
+  category        String?
+  description     String?
+  createdAt       DateTime @default(now())
+
+  investigatorVehicles InvestigatorVehicle[]
+}
+
+model AssetReference {
+  id            Int     @id @default(autoincrement())
+  era           String
+  level         String
+  crMin         Int
+  crMax         Int
+  cashMultiplier Int
+  assetMultiplier Int
+  description   String?
+  createdAt     DateTime @default(now())
+}
+
+model InvestigatorWeapon {
+  id              String   @id @default(uuid())
+  investigatorId  String
+  weaponId        Int
+  customName      String?
+  successRate     Int      @default(0)
+  currentAmmo     Int?
+  isJammed        Boolean  @default(false)
+  description     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  investigator    Investigator @relation(fields: [investigatorId], references: [id], onDelete: Cascade)
+  weapon          Weapon       @relation(fields: [weaponId], references: [id])
+}
+
+model InvestigatorArmor {
+  id              String   @id @default(uuid())
+  investigatorId  String
+  armorId         Int
+  currentDurability Int?
+  isEquipped      Boolean  @default(false)
+  description     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  investigator    Investigator @relation(fields: [investigatorId], references: [id], onDelete: Cascade)
+  armor           Armor        @relation(fields: [armorId], references: [id])
+}
+
+model InvestigatorVehicle {
+  id              String   @id @default(uuid())
+  investigatorId  String
+  vehicleId       Int
+  customName      String?
+  description     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  investigator    Investigator @relation(fields: [investigatorId], references: [id], onDelete: Cascade)
+  vehicle         Vehicle      @relation(fields: [vehicleId], references: [id])
+}
+
+model InvestigatorAsset {
+  id              String   @id @default(uuid())
+  investigatorId  String
+  category        String   // vehicle, residence, luxury, stock, other
+  name            String
+  value           Int      @default(0)
+  description     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  investigator    Investigator @relation(fields: [investigatorId], references: [id], onDelete: Cascade)
 }
 
 model ItemTemplate {
@@ -209,6 +315,8 @@ model ItemTemplate {
   era         String?
   price       Int     @default(0)
   createdAt   DateTime @default(now())
+
+  investigatorItems InvestigatorItem[]
 }
 
 model InvestigatorItem {
@@ -228,6 +336,9 @@ model InvestigatorItem {
   updatedAt         DateTime    @updatedAt
 
   investigator      Investigator @relation(fields: [investigatorId], references: [id], onDelete: Cascade)
+  itemTemplate      ItemTemplate? @relation(fields: [itemTemplateId], references: [id])
+  weapon            Weapon?       @relation(fields: [weaponId], references: [id])
+  armor             Armor?        @relation(fields: [armorId], references: [id])
 }
 
 model Campaign {
@@ -243,18 +354,21 @@ model Campaign {
   customRules     String?
   status          String          @default("RECRUITING")
   isPublic        Boolean         @default(true)
-  aiEnabled       String?
+  aiEnabled       Boolean         @default(false)
+  aiConfig        Json?
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 
   currentSceneId  String?
-  sessionStatus   String          @default("IDLE")
+  sessionStatus   String          @default("IDLE") // IDLE | IN_SESSION | COMBAT
 
   kp              User            @relation("CampaignKp", fields: [kpId], references: [id])
   members         CampaignMember[]
   scenes          Scene[]
   messages        Message[]
   actionRecords   ActionRecord[]
+  combatRounds    CombatRound[]
+  clues           Clue[]
 }
 
 model CampaignMember {
@@ -324,6 +438,9 @@ model Scene {
   updatedAt       DateTime  @updatedAt
 
   campaign        Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  tokens          SceneToken[]
+  fogData         FogData?
+  clues           Clue[]
 }
 
 model Message {
@@ -333,8 +450,8 @@ model Message {
   senderName    String
   senderType    String   @default("USER")
   content       String
-  messageType   String   @default("TEXT")
-  metadata      String?
+  messageType   String   @default("TEXT") // TEXT | CHECK | SYSTEM | COMBAT | CLUE | AI_DECISION | SCENE_CHANGE
+  metadata      Json?
   createdAt     DateTime @default(now())
 
   campaign      Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
@@ -352,7 +469,7 @@ model RollRecord {
   successLevel    String
   bonusDice       Int           @default(0)
   penaltyDice     Int           @default(0)
-  metadata        String?
+  metadata        Json?
   createdAt       DateTime      @default(now())
 
   investigator    Investigator? @relation(fields: [investigatorId], references: [id])
@@ -392,4 +509,176 @@ model QuickPanelSlot {
   updatedAt       DateTime  @updatedAt
 
   @@unique([userId, campaignId, slotIndex])
+}
+
+// ===== Phase 2B: Combat System =====
+
+model CombatRound {
+  id            String      @id @default(uuid())
+  campaignId    String
+  roundNumber   Int         @default(1)
+  turnIndex     Int         @default(0)
+  status        String      @default("ACTIVE") // ACTIVE | ENDED
+  createdAt     DateTime    @default(now())
+  endedAt       DateTime?
+
+  campaign      Campaign    @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  combatants    Combatant[]
+}
+
+model Combatant {
+  id                  String      @id @default(uuid())
+  combatRoundId       String
+  investigatorId      String?
+  name                String
+  initiative          Int         // DEX value
+  initiativeRoll      Int         // 1d100 when DEX tied
+  hp                  Int?
+  maxHp               Int?
+  san                 Int?
+  maxSan              Int?
+  mp                  Int?
+  maxMp               Int?
+  isNpc               Boolean     @default(false)
+  isVisibleToPlayers  Boolean     @default(true)
+  sortOrder           Int         @default(0)
+
+  combatRound         CombatRound @relation(fields: [combatRoundId], references: [id], onDelete: Cascade)
+  conditions          Condition[]
+}
+
+model Condition {
+  id                String    @id @default(uuid())
+  combatantId       String
+  name              String    // e.g. 瞄准, 眩晕, 流血
+  description       String?
+  roundsRemaining   Int?      // null = until manually removed
+  modifier          Int?      // e.g. +20 or -20
+  createdAt         DateTime  @default(now())
+
+  combatant         Combatant @relation(fields: [combatantId], references: [id], onDelete: Cascade)
+}
+
+// ===== Phase 3: Map & Clue System =====
+
+model SceneToken {
+  id                    String    @id @default(uuid())
+  sceneId               String
+  name                  String
+  imageUrl              String?
+  x                     Float
+  y                     Float
+  width                 Float     @default(40)
+  height                Float     @default(40)
+  rotation              Float     @default(0)
+  faction               String    @default("neutral") // player | ally | enemy | neutral
+  isHidden              Boolean   @default(false)
+  labels                Json?     // { hp: 12, san: 45 }
+  linkedInvestigatorId  String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  scene                 Scene     @relation(fields: [sceneId], references: [id], onDelete: Cascade)
+}
+
+model FogData {
+  id                String    @id @default(uuid())
+  sceneId           String    @unique
+  gmPaths           Json      // Fabric.js path objects
+  revealedRegions   Json      // player-visible mask
+  updatedAt         DateTime  @updatedAt
+
+  scene             Scene     @relation(fields: [sceneId], references: [id], onDelete: Cascade)
+}
+
+model Clue {
+  id                String    @id @default(uuid())
+  campaignId        String
+  sceneId           String?   // 关联场景ID
+  title             String
+  content           String
+  entityType        String    @default("clue") // clue | npc | location | organization | event
+  privacy           String    @default("private") // private | shared | public | specific_user
+  sharedWith        Json?     // string[] stored as JSON (compatible with SQLite & PostgreSQL)
+  triggerCondition  String?   // 线索触发条件描述
+  createdBy         String
+  sourceMessageId   String?
+  mapPosition       Json?     // { x, y } on map
+  metadata          Json?     // related entity IDs, timeline dates
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  campaign          Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  scene             Scene?    @relation(fields: [sceneId], references: [id], onDelete: SetNull)
+}
+
+model EntityRelation {
+  id            String    @id @default(uuid())
+  campaignId    String
+  sourceId      String    // Clue.id
+  targetId      String    // Clue.id
+  relationType  String    // e.g. 关联, 属于, 位于
+  createdAt     DateTime  @default(now())
+
+  @@unique([campaignId, sourceId, targetId, relationType])
+}
+
+// ===== Phase 4: Timeline & AI Logs =====
+
+model Timeline {
+  id            String          @id @default(uuid())
+  campaignId    String
+  name          String
+  description   String?
+  createdAt     DateTime        @default(now())
+
+  events        TimelineEvent[]
+}
+
+model TimelineEvent {
+  id            String    @id @default(uuid())
+  timelineId    String
+  title         String
+  description   String?
+  gameDate      String?   // in-game date e.g. "1924-03-15"
+  realDate      DateTime? // actual play session date
+  sortOrder     Int       @default(0)
+  clueIds       Json?     // string[] stored as JSON
+  metadata      Json?
+
+  timeline      Timeline  @relation(fields: [timelineId], references: [id], onDelete: Cascade)
+}
+
+model AiConversation {
+  id            String    @id @default(uuid())
+  campaignId    String
+  userId        String?
+  contextType   String    // room | solo | npc_dialogue
+  messages      Json      // OpenAI message format array
+  tokenCount    Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model AiActionLog {
+  id            String    @id @default(uuid())
+  campaignId    String
+  messageId     String
+  rawText       String    // original player message
+  parsedAction  Json?     // structured action
+  confidence    Float?
+  createdAt     DateTime  @default(now())
+}
+
+model InviteCode {
+  id            String    @id @default(uuid())
+  code          String    @unique
+  welcomeMsg    String
+  imageUrl      String?
+  maxUses       Int       @default(0) // 0 = unlimited
+  useCount      Int       @default(0)
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+
+  users         User[]
 }

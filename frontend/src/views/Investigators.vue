@@ -1,5 +1,13 @@
 <template>
   <div class="page">
+    <div class="back-bar">
+      <n-button text @click="$router.push('/')">
+        <template #icon>
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        </template>
+        返回首页
+      </n-button>
+    </div>
     <div class="header">
       <h2>我的角色卡</h2>
       <router-link to="/investigator/new">
@@ -85,6 +93,7 @@ function eraText(era: string) {
 
 <style scoped>
 .page { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+.back-bar { margin-bottom: 1rem; }
 .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
 .card-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
 .inv-card {

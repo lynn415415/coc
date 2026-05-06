@@ -5,9 +5,30 @@ import {
   OnGatewayConnection,
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
+import { InjectQueue } from '@nestjs/bull';
+import { OnEvent } from '@nestjs/event-emitter';
+import { JwtService } from '@nestjs/jwt';
 import { Server, Socket } from 'socket.io';
+import type { Queue } from 'bull';
 import { PrismaService } from '../prisma/prisma.service';
 import { DiceService } from '../dice/dice.service';
+import { AiService } from '../ai/ai.service';
+import { CombatService } from '../combat/combat.service';
+import type { AiCompletedEvent, AiStreamEvent } from '../ai/ai.processor';
+import type {
+  SendMessagePayload,
+  SendSystemMessagePayload,
+  RequestCheckPayload,
+  SceneChangePayloadInput,
+  PresenceUpdatePayload,
+  AiGeneratePayload,
+  AiFormatCheckPayload,
+  CombatStartPayload,
+  CombatUpdateHpPayload,
+  MessageMetadata,
+  BaseBroadcastMessage,
+  CheckBroadcastMessage,
+} from '../common/types/message.types';
 
 interface CampaignSocket extends Socket {
   data: {
@@ -25,15 +46,28 @@ export class CampaignGateway implements OnGatewayConnection, OnGatewayDisconnect
   constructor(
     private prisma: PrismaService,
     private dice: DiceService,
+    private jwt: JwtService,
+    private ai: AiService,
+    private combat: CombatService,
+    @InjectQueue('ai-generation') private aiQueue: Queue,
   ) {}
 
   handleConnection(client: CampaignSocket) {
-    // 从查询参数或握手信息获取用户身份（简化实现，生产环境应验证JWT）
-    const userId = client.handshake.query.userId as string;
-    const username = client.handshake.query.username as string;
-    if (userId) {
-      client.data.userId = userId;
-      client.data.username = username || '匿名';
+    const token =
+      (client.handshake.auth?.token as string) ||
+      (client.handshake.query?.token as string) ||
+      (client.handshake.headers?.authorization as string)?.replace('Bearer ', '');
+
+    if (token) {
+      try {
+        const payload = this.jwt.verify(token);
+        client.data.userId = payload.sub;
+        client.data.username = payload.username || payload.nickname || '匿名';
+      } catch {
+        client.disconnect(true);
+      }
+    } else {
+      client.disconnect(true);
     }
   }
 
@@ -44,6 +78,16 @@ export class CampaignGateway implements OnGatewayConnection, OnGatewayDisconnect
         username: client.data.username,
       });
     }
+  }
+
+  @OnEvent('ai.completed')
+  handleAiCompleted(payload: AiCompletedEvent) {
+    this.server.to(`campaign:${payload.campaignId}`).emit('new_message', payload.message);
+  }
+
+  @OnEvent('ai.stream')
+  handleAiStream(payload: AiStreamEvent) {
+    this.server.to(`campaign:${payload.campaignId}`).emit('ai_stream', payload);
   }
 
   @SubscribeMessage('join_campaign')
@@ -76,7 +120,7 @@ export class CampaignGateway implements OnGatewayConnection, OnGatewayDisconnect
   }
 
   @SubscribeMessage('send_message')
-  async handleMessage(client: CampaignSocket, payload: { content: string; messageType?: string; metadata?: any }) {
+  async handleMessage(client: CampaignSocket, payload: SendMessagePayload) {
     const campaignId = client.data.campaignId;
     if (!campaignId) return { error: '未加入房间' };
 
@@ -88,28 +132,46 @@ export class CampaignGateway implements OnGatewayConnection, OnGatewayDisconnect
         senderType: 'USER',
         content: payload.content,
         messageType: payload.messageType || 'TEXT',
-        metadata: payload.metadata ? JSON.stringify(payload.metadata) : undefined,
+        metadata: (payload.metadata ?? undefined) as any,
       },
     });
 
-    const broadcastData = {
+    const broadcastData: BaseBroadcastMessage = {
       id: message.id,
       campaignId: message.campaignId,
       senderId: message.senderId,
       senderName: message.senderName,
-      senderType: message.senderType,
+      senderType: message.senderType as any,
       content: message.content,
-      messageType: message.messageType,
-      metadata: message.metadata ? JSON.parse(message.metadata) : undefined,
-      createdAt: message.createdAt,
+      messageType: message.messageType as any,
+      metadata: (message.metadata ?? undefined) as MessageMetadata | undefined,
+      createdAt: message.createdAt.toISOString(),
     };
 
     this.server.to(`campaign:${campaignId}`).emit('new_message', broadcastData);
+
+    // L1: AI全自动 — 检测 /ai 命令并生成内容
+    if (payload.content?.startsWith('/ai ')) {
+      const prompt = payload.content.slice(4).trim();
+      if (prompt && this.ai.isConfigured()) {
+        this.handleAiCommand(campaignId, client.data.userId, prompt).catch(() => {});
+      }
+    }
+
     return { success: true, message: broadcastData };
   }
 
+  private async handleAiCommand(campaignId: string, userId: string | undefined, prompt: string) {
+    await this.aiQueue.add('generate', {
+      campaignId,
+      userId,
+      prompt,
+      type: 'scene',
+    });
+  }
+
   @SubscribeMessage('send_system_message')
-  async handleSystemMessage(client: CampaignSocket, payload: { content: string; metadata?: any }) {
+  async handleSystemMessage(client: CampaignSocket, payload: SendSystemMessagePayload) {
     const campaignId = client.data.campaignId;
     if (!campaignId) return { error: '未加入房间' };
 
@@ -121,34 +183,28 @@ export class CampaignGateway implements OnGatewayConnection, OnGatewayDisconnect
         senderType: 'SYSTEM',
         content: payload.content,
         messageType: 'SYSTEM',
-        metadata: payload.metadata ? JSON.stringify(payload.metadata) : undefined,
+        metadata: (payload.metadata ?? undefined) as any,
       },
     });
 
-    const broadcastData = {
+    const sysBroadcast: BaseBroadcastMessage = {
       id: message.id,
       campaignId: message.campaignId,
       senderId: message.senderId,
       senderName: message.senderName,
-      senderType: message.senderType,
+      senderType: message.senderType as any,
       content: message.content,
-      messageType: message.messageType,
-      metadata: message.metadata ? JSON.parse(message.metadata) : undefined,
-      createdAt: message.createdAt,
+      messageType: message.messageType as any,
+      metadata: (message.metadata ?? undefined) as MessageMetadata | undefined,
+      createdAt: message.createdAt.toISOString(),
     };
 
-    this.server.to(`campaign:${campaignId}`).emit('new_message', broadcastData);
-    return { success: true, message: broadcastData };
+    this.server.to(`campaign:${campaignId}`).emit('new_message', sysBroadcast);
+    return { success: true, message: sysBroadcast };
   }
 
   @SubscribeMessage('request_check')
-  async handleCheck(client: CampaignSocket, payload: {
-    targetValue: number;
-    skillName?: string;
-    bonusDice?: number;
-    penaltyDice?: number;
-    investigatorId?: string;
-  }) {
+  async handleCheck(client: CampaignSocket, payload: RequestCheckPayload) {
     const campaignId = client.data.campaignId;
     if (!campaignId) return { error: '未加入房间' };
 
@@ -170,31 +226,35 @@ export class CampaignGateway implements OnGatewayConnection, OnGatewayDisconnect
         successLevel: result.successLevel,
         bonusDice: payload.bonusDice || 0,
         penaltyDice: payload.penaltyDice || 0,
-        metadata: JSON.stringify({ description: result.description }),
+        metadata: { description: result.description },
       },
     });
 
-    const broadcastData = {
+    const checkBroadcast: CheckBroadcastMessage = {
       id: rollRecord.id,
       campaignId,
-      senderId: client.data.userId,
-      senderName: client.data.username,
+      senderId: client.data.userId ?? null,
+      senderName: client.data.username || '匿名',
+      senderType: 'PLAYER',
+      content: `${payload.skillName || '检定'}: ${result.roll}/${payload.targetValue} → ${result.description}`,
+      messageType: 'CHECK',
       skillName: payload.skillName,
       targetValue: payload.targetValue,
       rollResult: result.roll,
-      successLevel: result.successLevel,
+      successLevel: result.successLevel as any,
       description: result.description,
       bonusDice: payload.bonusDice || 0,
       penaltyDice: payload.penaltyDice || 0,
-      createdAt: rollRecord.createdAt,
+      rawDice: result.rawDice,
+      createdAt: rollRecord.createdAt.toISOString(),
     };
 
-    this.server.to(`campaign:${campaignId}`).emit('check_result', broadcastData);
-    return { success: true, result: broadcastData };
+    this.server.to(`campaign:${campaignId}`).emit('check_result', checkBroadcast);
+    return { success: true, result: checkBroadcast };
   }
 
   @SubscribeMessage('scene_change')
-  async handleSceneChange(client: CampaignSocket, payload: { sceneId: string; sceneName?: string }) {
+  async handleSceneChange(client: CampaignSocket, payload: SceneChangePayloadInput) {
     const campaignId = client.data.campaignId;
     if (!campaignId) return { error: '未加入房间' };
 
@@ -209,7 +269,7 @@ export class CampaignGateway implements OnGatewayConnection, OnGatewayDisconnect
   }
 
   @SubscribeMessage('presence_update')
-  async handlePresence(client: CampaignSocket, payload: { status: string }) {
+  async handlePresence(client: CampaignSocket, payload: PresenceUpdatePayload) {
     const campaignId = client.data.campaignId;
     if (!campaignId) return { error: '未加入房间' };
 
@@ -220,5 +280,114 @@ export class CampaignGateway implements OnGatewayConnection, OnGatewayDisconnect
     });
 
     return { success: true };
+  }
+
+  @SubscribeMessage('ai_generate')
+  async handleAiGenerate(client: CampaignSocket, payload: AiGeneratePayload) {
+    const campaignId = client.data.campaignId;
+    if (!campaignId) return { error: '未加入房间' };
+    if (!this.ai.isConfigured()) return { error: 'AI服务未配置' };
+
+    await this.aiQueue.add('generate', {
+      campaignId,
+      userId: client.data.userId,
+      username: client.data.username,
+      prompt: payload.prompt,
+      type: payload.type,
+    });
+    return { success: true, queued: true };
+  }
+
+  @SubscribeMessage('ai_format_check')
+  async handleAiFormatCheck(client: CampaignSocket, payload: AiFormatCheckPayload) {
+    const campaignId = client.data.campaignId;
+    if (!campaignId) return { error: '未加入房间' };
+    if (!this.ai.isConfigured()) return { error: 'AI服务未配置' };
+
+    await this.aiQueue.add('generate', {
+      campaignId,
+      userId: client.data.userId,
+      username: client.data.username,
+      prompt: JSON.stringify(payload),
+      type: 'check_format',
+    });
+    return { success: true, queued: true };
+  }
+
+  // ===== Combat Events =====
+
+  @SubscribeMessage('combat_start')
+  async handleCombatStart(client: CampaignSocket, payload: CombatStartPayload) {
+    const campaignId = client.data.campaignId;
+    if (!campaignId) return { error: '未加入房间' };
+
+    try {
+      const combat = await this.combat.startCombat(campaignId, payload.investigatorIds, (payload.npcs || []) as any);
+      this.server.to(`campaign:${campaignId}`).emit('combat_updated', combat);
+      return { success: true, combat };
+    } catch (err: any) {
+      return { error: err.message };
+    }
+  }
+
+  @SubscribeMessage('combat_next_turn')
+  async handleCombatNextTurn(client: CampaignSocket) {
+    const campaignId = client.data.campaignId;
+    if (!campaignId) return { error: '未加入房间' };
+
+    try {
+      await this.combat.tickConditions(campaignId);
+      const combat = await this.combat.nextTurn(campaignId);
+      this.server.to(`campaign:${campaignId}`).emit('combat_updated', combat);
+      return { success: true, combat };
+    } catch (err: any) {
+      return { error: err.message };
+    }
+  }
+
+  @SubscribeMessage('combat_end')
+  async handleCombatEnd(client: CampaignSocket) {
+    const campaignId = client.data.campaignId;
+    if (!campaignId) return { error: '未加入房间' };
+
+    try {
+      const combat = await this.combat.endCombat(campaignId);
+      this.server.to(`campaign:${campaignId}`).emit('combat_updated', null);
+      this.server.to(`campaign:${campaignId}`).emit('combat_ended', combat);
+      return { success: true, combat };
+    } catch (err: any) {
+      return { error: err.message };
+    }
+  }
+
+  @SubscribeMessage('combat_update_hp')
+  async handleCombatHp(client: CampaignSocket, payload: CombatUpdateHpPayload) {
+    const campaignId = client.data.campaignId;
+    if (!campaignId) return { error: '未加入房间' };
+
+    try {
+      const combatant = await this.combat.updateCombatantHp(payload.combatantId, payload.hp);
+      const combat = await this.combat.getActiveCombat(campaignId);
+      this.server.to(`campaign:${campaignId}`).emit('combat_updated', combat);
+
+      // 广播HP变化消息
+      const deltaStr = payload.delta >= 0 ? `+${payload.delta}` : `${payload.delta}`;
+      const hpBroadcast: BaseBroadcastMessage = {
+        id: `combat-${Date.now()}`,
+        campaignId,
+        senderId: null,
+        senderName: '战斗系统',
+        senderType: 'SYSTEM',
+        content: `${combatant.name} HP ${deltaStr}（${payload.hp}/${combatant.maxHp}）`,
+        messageType: 'COMBAT',
+        metadata: { action: 'HP_CHANGE', combatantId: payload.combatantId, hp: payload.hp, maxHp: combatant.maxHp } as MessageMetadata,
+        createdAt: new Date().toISOString(),
+      };
+      this.server.to(`campaign:${campaignId}`).emit('new_message', hpBroadcast);
+
+      return { success: true };
+    } catch (err: any) {
+      return { error: err.message };
+    }
   }
 }

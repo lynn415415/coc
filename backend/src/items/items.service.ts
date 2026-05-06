@@ -5,6 +5,38 @@ import { PrismaService } from '../prisma/prisma.service';
 export class ItemsService {
   constructor(private prisma: PrismaService) {}
 
+  async list(investigatorId: string) {
+    return this.prisma.investigatorItem.findMany({
+      where: { investigatorId },
+      include: { weapon: true, armor: true },
+      orderBy: { location: 'asc' },
+    });
+  }
+
+  async create(investigatorId: string, dto: { customName?: string; location?: string; quantity?: number; description?: string; weaponId?: number; armorId?: number; itemTemplateId?: number }) {
+    return this.prisma.investigatorItem.create({
+      data: {
+        investigatorId,
+        customName: dto.customName,
+        location: dto.location || 'storage',
+        quantity: dto.quantity || 1,
+        description: dto.description,
+        weaponId: dto.weaponId,
+        armorId: dto.armorId,
+        itemTemplateId: dto.itemTemplateId,
+      },
+    });
+  }
+
+  async findOne(investigatorId: string, itemId: string) {
+    const item = await this.prisma.investigatorItem.findUnique({
+      where: { id: itemId, investigatorId },
+      include: { weapon: true, armor: true },
+    });
+    if (!item) throw new NotFoundException('物品不存在');
+    return item;
+  }
+
   async useItem(investigatorId: string, itemId: string, userId: string) {
     const inv = await this.prisma.investigator.findUnique({ where: { id: investigatorId } });
     if (!inv) throw new NotFoundException('调查员不存在');

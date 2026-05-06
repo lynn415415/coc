@@ -26,6 +26,12 @@ export class ScenesService {
     });
   }
 
+  async get(sceneId: string) {
+    const scene = await this.prisma.scene.findUnique({ where: { id: sceneId } });
+    if (!scene) throw new NotFoundException('场景不存在');
+    return scene;
+  }
+
   async list(campaignId: string) {
     return this.prisma.scene.findMany({
       where: { campaignId },

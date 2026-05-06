@@ -82,26 +82,26 @@ async function main() {
 
   // 职业
   const occupations = [
-    { name: '会计师', creditMin: 30, creditMax: 70, pointFormula: 'EDU*4', skillIds: '[1,2,4,6,19,30,0,0]' },
-    { name: '杂技演员', creditMin: 9, creditMax: 20, pointFormula: 'EDU*2+DEX*2', skillIds: '[14,22,42,33,30,32,0,0]' },
-    { name: '演员', creditMin: 9, creditMax: 40, pointFormula: 'EDU*2+APP*2', skillIds: '[21,40,23,23,25,0,0,0]' },
-    { name: '古董商', creditMin: 30, creditMax: 50, pointFormula: 'EDU*4', skillIds: '[1,5,24,16,0,0,0,0]' },
-    { name: '考古学家', creditMin: 10, creditMax: 40, pointFormula: 'EDU*4', skillIds: '[5,7,38,0,0,0,0,0]' },
-    { name: '艺术家', creditMin: 9, creditMax: 50, pointFormula: 'EDU*2+MAX(DEX*2,POW*2)', skillIds: '[0,0,0,0,0,0,0,0]' },
-    { name: '运动员', creditMin: 9, creditMax: 70, pointFormula: 'EDU*2+MAX(STR*2,DEX*2)', skillIds: '[14,42,47,0,0,0,0,0]' },
-    { name: '作家', creditMin: 9, creditMax: 30, pointFormula: 'EDU*4', skillIds: '[0,0,0,0,0,0,0,0]' },
-    { name: '酒保', creditMin: 8, creditMax: 25, pointFormula: 'EDU*2+APP*2', skillIds: '[1,12,13,6,25,30,0,0]' },
-    { name: '猎人', creditMin: 20, creditMax: 50, pointFormula: 'EDU*2+MAX(STR*2,DEX*2)', skillIds: '[55,6,11,13,37,32,0,0]' },
-    { name: '书商', creditMin: 20, creditMax: 40, pointFormula: 'EDU*4', skillIds: '[1,5,24,38,4,46,19,0]' },
-    { name: '神职人员', creditMin: 9, creditMax: 60, pointFormula: 'EDU*4', skillIds: '[1,38,4,6,0,0,0,0]' },
-    { name: '程序员', creditMin: 10, creditMax: 70, pointFormula: 'EDU*4', skillIds: '[16,27,4,0,0,0,0,0]' },
-    { name: '牛仔', creditMin: 9, creditMax: 20, pointFormula: 'EDU*2+MAX(STR*2,DEX*2)', skillIds: '[22,0,0,0,0,0,0,0]' },
-    { name: '工匠', creditMin: 10, creditMax: 40, pointFormula: 'EDU*2+DEX*2', skillIds: '[1,0,0,0,0,0,0,0]' },
-    { name: '罪犯', creditMin: 5, creditMax: 75, pointFormula: 'EDU*2+MAX(STR*2,DEX*2)', skillIds: '[21,16,0,0,0,0,0,0]' },
-    { name: '医生', creditMin: 30, creditMax: 80, pointFormula: 'EDU*4', skillIds: '[10,0,0,0,0,0,0,0]' },
-    { name: '警察', creditMin: 9, creditMax: 60, pointFormula: 'EDU*2+MAX(STR*2,DEX*2)', skillIds: '[12,13,19,6,25,30,34,0]' },
-    { name: '教授', creditMin: 20, creditMax: 70, pointFormula: 'EDU*4', skillIds: '[38,4,46,0,0,0,0,0]' },
-    { name: '科学家', creditMin: 9, creditMax: 70, pointFormula: 'EDU*4', skillIds: '[0,0,0,0,0,0,0,0]' },
+    { name: '会计师', creditMin: 30, creditMax: 70, pointFormula: 'EDU*4', skillIds: '[1,2,4,6,19,30]' },
+    { name: '杂技演员', creditMin: 9, creditMax: 20, pointFormula: 'EDU*2+DEX*2', skillIds: '[14,22,42,33,30,32]' },
+    { name: '演员', creditMin: 9, creditMax: 40, pointFormula: 'EDU*2+APP*2', skillIds: '[21,40,23,23,25]' },
+    { name: '古董商', creditMin: 30, creditMax: 50, pointFormula: 'EDU*4', skillIds: '[1,5,24,16]' },
+    { name: '考古学家', creditMin: 10, creditMax: 40, pointFormula: 'EDU*4', skillIds: '[5,7,38]' },
+    { name: '艺术家', creditMin: 9, creditMax: 50, pointFormula: 'EDU*2+DEX*2', skillIds: '[47,46]' },
+    { name: '运动员', creditMin: 9, creditMax: 70, pointFormula: 'EDU*2+MAX(STR*2,DEX*2)', skillIds: '[14,42,47]' },
+    { name: '作家', creditMin: 9, creditMax: 30, pointFormula: 'EDU*4', skillIds: '[46,38,4]' },
+    { name: '酒保', creditMin: 8, creditMax: 25, pointFormula: 'EDU*2+APP*2', skillIds: '[1,12,13,6,25,30]' },
+    { name: '猎人', creditMin: 20, creditMax: 50, pointFormula: 'EDU*2+MAX(STR*2,DEX*2)', skillIds: '[55,6,11,13,37,32]' },
+    { name: '书商', creditMin: 20, creditMax: 40, pointFormula: 'EDU*4', skillIds: '[1,5,24,38,4,46,19]' },
+    { name: '神职人员', creditMin: 9, creditMax: 60, pointFormula: 'EDU*4', skillIds: '[1,38,4,6]' },
+    { name: '程序员', creditMin: 10, creditMax: 70, pointFormula: 'EDU*4', skillIds: '[16,27,4]' },
+    { name: '牛仔', creditMin: 9, creditMax: 20, pointFormula: 'EDU*2+MAX(STR*2,DEX*2)', skillIds: '[22,55]' },
+    { name: '工匠', creditMin: 10, creditMax: 40, pointFormula: 'EDU*2+DEX*2', skillIds: '[1,9]' },
+    { name: '罪犯', creditMin: 5, creditMax: 75, pointFormula: 'EDU*2+MAX(STR*2,DEX*2)', skillIds: '[21,16,30,29]' },
+    { name: '医生', creditMin: 30, creditMax: 80, pointFormula: 'EDU*4', skillIds: '[10,37,6]' },
+    { name: '警察', creditMin: 9, creditMax: 60, pointFormula: 'EDU*2+MAX(STR*2,DEX*2)', skillIds: '[12,13,19,6,25,30,34]' },
+    { name: '教授', creditMin: 20, creditMax: 70, pointFormula: 'EDU*4', skillIds: '[38,4,46]' },
+    { name: '科学家', creditMin: 9, creditMax: 70, pointFormula: 'EDU*4', skillIds: '[27,38,4]' },
   ];
 
   for (const o of occupations) {
@@ -115,14 +115,14 @@ async function main() {
 
   // 武器
   const weapons = [
-    { name: '弓箭', damageFormula: '1D6+半DB', baseRange: '30码', impale: true, attacksPerRound: '1', ammoCapacity: 1, malfunction: 97 },
+    { name: '弓箭', damageFormula: '1D6+半DB', baseRange: '30码', impale: true, attacksPerRound: '1', ammoCapacity: '1', malfunction: 97 },
     { name: '黄铜指虎', damageFormula: '1D3+1+DB', baseRange: '接触', impale: false, attacksPerRound: '1' },
     { name: '长鞭', damageFormula: '1D3+半DB', baseRange: '10英尺', impale: false, attacksPerRound: '1' },
     { name: '电锯', damageFormula: '2D8', baseRange: '接触', impale: true, attacksPerRound: '1', malfunction: 95 },
     { name: '甩棍', damageFormula: '1D8+DB', baseRange: '接触', impale: false, attacksPerRound: '1' },
     { name: '棒球棍', damageFormula: '1D8+DB', baseRange: '接触', impale: false, attacksPerRound: '1' },
     { name: '警棍', damageFormula: '1D6+DB', baseRange: '接触', impale: false, attacksPerRound: '1' },
-    { name: '弩', damageFormula: '1D8+2', baseRange: '50码', impale: true, attacksPerRound: '1/2', ammoCapacity: 1, malfunction: 96 },
+    { name: '弩', damageFormula: '1D8+2', baseRange: '50码', impale: true, attacksPerRound: '1/2', ammoCapacity: '1', malfunction: 96 },
     { name: '手斧', damageFormula: '1D6+1+DB', baseRange: '接触', impale: true, attacksPerRound: '1' },
     { name: '大型刀具', damageFormula: '1D8+DB', baseRange: '接触', impale: true, attacksPerRound: '1' },
     { name: '中型刀具', damageFormula: '1D4+2+DB', baseRange: '接触', impale: true, attacksPerRound: '1' },
@@ -135,11 +135,11 @@ async function main() {
     { name: '大型剑', damageFormula: '1D8+1+DB', baseRange: '接触', impale: true, attacksPerRound: '1' },
     { name: '中型剑', damageFormula: '1D6+1+DB', baseRange: '接触', impale: true, attacksPerRound: '1' },
     { name: '轻型剑', damageFormula: '1D6+DB', baseRange: '接触', impale: true, attacksPerRound: '1' },
-    { name: '手枪', damageFormula: '1D10', baseRange: '15码', impale: true, attacksPerRound: '1(3)', ammoCapacity: 8, malfunction: 100 },
-    { name: '左轮手枪', damageFormula: '1D10', baseRange: '15码', impale: true, attacksPerRound: '1(3)', ammoCapacity: 6, malfunction: 100 },
-    { name: '步枪/霰弹枪', damageFormula: '4D6', baseRange: '100码', impale: true, attacksPerRound: '1', ammoCapacity: 5, malfunction: 100 },
-    { name: '冲锋枪', damageFormula: '1D10', baseRange: '30码', impale: true, attacksPerRound: '1(2)', ammoCapacity: 30, malfunction: 96 },
-    { name: '机枪', damageFormula: '2D10+6', baseRange: '200码', impale: true, attacksPerRound: '1', ammoCapacity: 100, malfunction: 96 },
+    { name: '手枪', damageFormula: '1D10', baseRange: '15码', impale: true, attacksPerRound: '1(3)', ammoCapacity: '8', malfunction: 100 },
+    { name: '左轮手枪', damageFormula: '1D10', baseRange: '15码', impale: true, attacksPerRound: '1(3)', ammoCapacity: '6', malfunction: 100 },
+    { name: '步枪/霰弹枪', damageFormula: '4D6', baseRange: '100码', impale: true, attacksPerRound: '1', ammoCapacity: '5', malfunction: 100 },
+    { name: '冲锋枪', damageFormula: '1D10', baseRange: '30码', impale: true, attacksPerRound: '1(2)', ammoCapacity: '30', malfunction: 96 },
+    { name: '机枪', damageFormula: '2D10+6', baseRange: '200码', impale: true, attacksPerRound: '1', ammoCapacity: '100', malfunction: 96 },
     { name: '重武器', damageFormula: '4D10', baseRange: '100码', impale: true, attacksPerRound: '1', malfunction: 95 },
   ];
 
@@ -214,7 +214,7 @@ async function main() {
     '药物癖（Andromania）：执着于药物。',
     '愤怒癖（Anglomania）：执着于愤怒。',
     '花朵癖（Anthomania）：执着于花朵。',
-    '打赌癖（Astromania）：执着于打赌。',
+    '打赌癖（Gamomania）：执着于打赌。',
     '天文学癖（Astromania）：执着于天文学。',
     '书籍癖（Bibliomania）：执着于书籍。',
     '癫痫癖（Epilepsia）：执着于癫痫。',
@@ -257,6 +257,48 @@ async function main() {
     });
   }
   console.log(`Inserted ${episodes.length} insanity episodes`);
+
+  // 载具
+  const vehicles = [
+    { name: '福特T型车', skill: '汽车驾驶', mov: 12, build: '2', passengerArmor: 2, passengers: '1+2', driverBuild: '2', riderBuild: '2', era: '1920s', category: '地面载具', description: '1920年代最常见的汽车。' },
+    { name: '马车', skill: '汽车驾驶', mov: 8, build: '3', passengerArmor: 0, passengers: '1+4', driverBuild: '3', riderBuild: '3', era: '1920s', category: '地面载具', description: '适合乡村道路。' },
+    { name: '自行车', skill: '骑术', mov: 8, build: '0', passengerArmor: 0, passengers: '1', driverBuild: '0', riderBuild: '0', era: '通用', category: '地面载具', description: '安静且灵活。' },
+    { name: '摩托艇', skill: '导航', mov: 15, build: '2', passengerArmor: 0, passengers: '1+3', driverBuild: '2', riderBuild: '2', era: '通用', category: '水面载具', description: '小型快速船只。' },
+    { name: '小型飞机', skill: '导航', mov: 60, build: '3', passengerArmor: 0, passengers: '1+3', driverBuild: '3', riderBuild: '3', era: '1920s', category: '空中载具', description: '私人或轻型商用飞机。' },
+    { name: '卡车', skill: '汽车驾驶', mov: 10, build: '4', passengerArmor: 3, passengers: '1+2', driverBuild: '4', riderBuild: '4', era: '现代', category: '地面载具', description: '适合运输货物。' },
+    { name: '摩托车', skill: '汽车驾驶', mov: 15, build: '1', passengerArmor: 0, passengers: '1+1', driverBuild: '1', riderBuild: '1', era: '现代', category: '地面载具', description: '快速但危险。' },
+    { name: '出租车', skill: '汽车驾驶', mov: 12, build: '2', passengerArmor: 2, passengers: '1+3', driverBuild: '2', riderBuild: '2', era: '现代', category: '地面载具', description: '城市内便捷的交通工具。' },
+  ];
+  for (let i = 0; i < vehicles.length; i++) {
+    await prisma.vehicle.upsert({
+      where: { id: i + 1 },
+      update: {},
+      create: vehicles[i],
+    });
+  }
+  console.log(`Inserted ${vehicles.length} vehicles`);
+
+  // 资产参考（信用评级→现金/资产倍率）
+  const assetRefs = [
+    { era: '1920s', level: 'DESTITUTE', crMin: 0, crMax: 9, cashMultiplier: 5, assetMultiplier: 50, description: '赤贫：几乎没有任何资产。' },
+    { era: '1920s', level: 'POOR', crMin: 10, crMax: 49, cashMultiplier: 5, assetMultiplier: 50, description: '贫穷：勉强维持生计。' },
+    { era: '1920s', level: 'AVERAGE', crMin: 50, crMax: 69, cashMultiplier: 5, assetMultiplier: 50, description: '标准：中产阶级生活水平。' },
+    { era: '1920s', level: 'WEALTHY', crMin: 70, crMax: 89, cashMultiplier: 5, assetMultiplier: 50, description: '富裕：拥有多处房产和投资。' },
+    { era: '1920s', level: 'RICH', crMin: 90, crMax: 99, cashMultiplier: 5, assetMultiplier: 50, description: '极富：豪宅、游艇、仆人。' },
+    { era: '现代', level: 'DESTITUTE', crMin: 0, crMax: 9, cashMultiplier: 20, assetMultiplier: 200, description: '赤贫：几乎没有任何资产。' },
+    { era: '现代', level: 'POOR', crMin: 10, crMax: 49, cashMultiplier: 20, assetMultiplier: 200, description: '贫穷：勉强维持生计。' },
+    { era: '现代', level: 'AVERAGE', crMin: 50, crMax: 69, cashMultiplier: 20, assetMultiplier: 200, description: '标准：中产阶级生活水平。' },
+    { era: '现代', level: 'WEALTHY', crMin: 70, crMax: 89, cashMultiplier: 20, assetMultiplier: 200, description: '富裕：拥有多处房产和投资。' },
+    { era: '现代', level: 'RICH', crMin: 90, crMax: 99, cashMultiplier: 20, assetMultiplier: 200, description: '极富：豪宅、游艇、仆人。' },
+  ];
+  for (let i = 0; i < assetRefs.length; i++) {
+    await prisma.assetReference.upsert({
+      where: { id: i + 1 },
+      update: {},
+      create: assetRefs[i],
+    });
+  }
+  console.log(`Inserted ${assetRefs.length} asset references`);
 
   console.log('Seed completed!');
 }

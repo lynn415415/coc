@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../prisma/prisma.service';
+import { InviteCodesService } from '../invite-codes/invite-codes.service';
 import { RegisterDto, LoginDto } from './dto';
 
 @Injectable()
@@ -11,13 +12,20 @@ export class AuthService {
     private prisma: PrismaService,
     private jwtService: JwtService,
     private config: ConfigService,
+    private inviteCodesService: InviteCodesService,
   ) {}
 
-  async register(dto: RegisterDto) {
+  async register(dto: RegisterDto & { inviteCode?: string }) {
     const existing = await this.prisma.user.findFirst({
       where: { OR: [{ username: dto.username }, { email: dto.email }] },
     });
     if (existing) throw new ConflictException('用户名或邮箱已存在');
+
+    let inviteCodeId: string | undefined;
+    if (dto.inviteCode) {
+      const invite = await this.inviteCodesService.validate(dto.inviteCode);
+      inviteCodeId = invite.id;
+    }
 
     const hash = await bcrypt.hash(dto.password, 10);
     const user = await this.prisma.user.create({
@@ -26,9 +34,15 @@ export class AuthService {
         email: dto.email,
         passwordHash: hash,
         nickname: dto.nickname || dto.username,
+        inviteCodeId,
       },
       select: { id: true, username: true, nickname: true, role: true, createdAt: true },
     });
+
+    if (inviteCodeId) {
+      await this.inviteCodesService.useCode(inviteCodeId);
+    }
+
     return user;
   }
 

@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="128" height="128">
+  <!-- Long-haired black cat pixel art -->
+  <!-- Body -->
+  <rect x="10" y="14" width="12" height="10" fill="#1a1a1a"/>
+  <!-- Head -->
+  <rect x="11" y="8" width="10" height="8" fill="#1a1a1a"/>
+  <!-- Ears -->
+  <rect x="11" y="6" width="3" height="4" fill="#1a1a1a"/>
+  <rect x="18" y="6" width="3" height="4" fill="#1a1a1a"/>
+  <!-- Inner ears -->
+  <rect x="12" y="7" width="1" height="2" fill="#4a2c2c"/>
+  <rect x="19" y="7" width="1" height="2" fill="#4a2c2c"/>
+  <!-- Eyes -->
+  <rect x="13" y="11" width="2" height="2" fill="#4ade80"/>
+  <rect x="17" y="11" width="2" height="2" fill="#4ade80"/>
+  <!-- Eye pupils -->
+  <rect x="14" y="11" width="1" height="2" fill="#1a1a1a"/>
+  <rect x="18" y="11" width="1" height="2" fill="#1a1a1a"/>
+  <!-- Nose -->
+  <rect x="15" y="13" width="2" height="1" fill="#ff6b9d"/>
+  <!-- Mouth -->
+  <rect x="14" y="14" width="1" height="1" fill="#333"/>
+  <rect x="17" y="14" width="1" height="1" fill="#333"/>
+  <!-- Long fur on sides -->
+  <rect x="8" y="12" width="2" height="6" fill="#1a1a1a"/>
+  <rect x="22" y="12" width="2" height="6" fill="#1a1a1a"/>
+  <rect x="7" y="14" width="1" height="4" fill="#1a1a1a"/>
+  <rect x="24" y="14" width="1" height="4" fill="#1a1a1a"/>
+  <!-- Front legs -->
+  <rect x="11" y="22" width="3" height="4" fill="#1a1a1a"/>
+  <rect x="18" y="22" width="3" height="4" fill="#1a1a1a"/>
+  <!-- Paws -->
+  <rect x="11" y="25" width="3" height="1" fill="#333"/>
+  <rect x="18" y="25" width="3" height="1" fill="#333"/>
+  <!-- Tail -->
+  <rect x="22" y="18" width="4" height="2" fill="#1a1a1a"/>
+  <rect x="25" y="16" width="2" height="2" fill="#1a1a1a"/>
+  <rect x="26" y="14" width="2" height="2" fill="#1a1a1a"/>
+  <!-- Long fur on chest -->
+  <rect x="12" y="14" width="2" height="3" fill="#2a2a2a"/>
+  <rect x="18" y="14" width="2" height="3" fill="#2a2a2a"/>
+  <!-- Whiskers -->
+  <rect x="9" y="13" width="3" height="1" fill="#555"/>
+  <rect x="9" y="15" width="3" height="1" fill="#555"/>
+  <rect x="20" y="13" width="3" height="1" fill="#555"/>
+  <rect x="20" y="15" width="3" height="1" fill="#555"/>
+</svg>

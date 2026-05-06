@@ -1,7 +1,10 @@
 <template>
   <div class="page">
     <div class="header">
-      <h2>跑团列表</h2>
+      <div class="header-left">
+        <n-button quaternary @click="router.push('/')">← 返回主页</n-button>
+        <h2>跑团列表</h2>
+      </div>
       <n-button type="primary" @click="showCreate = true">创建跑团</n-button>
     </div>
 
@@ -35,7 +38,32 @@
       </div>
     </div>
 
-    <n-empty v-if="!hosted.length && !joined.length" description="暂无跑团，创建一个吧" />
+    <!-- 发现公开跑团 -->
+    <div class="section">
+      <h3>发现跑团</h3>
+      <div v-if="discoverLoading" class="discover-loading">
+        <n-spin size="small" /> 加载中...
+      </div>
+      <div v-else-if="discoverList.length" class="card-grid">
+        <div v-for="c in discoverList" :key="c.id" class="campaign-card discover-card">
+          <div class="card-title">{{ c.title }}</div>
+          <div class="card-meta">
+            <n-tag size="small" type="success">招募中</n-tag>
+            <span>{{ c._count.members }}/{{ c.maxPlayers }} 人</span>
+            <span v-if="c.era">{{ eraText(c.era) }}</span>
+          </div>
+          <div class="card-kp">KP: {{ c.kp.nickname || c.kp.username }}</div>
+          <div class="card-desc">{{ c.description || '暂无描述' }}</div>
+          <div class="card-actions">
+            <n-button size="small" type="primary" @click.stop="joinCampaign(c.id)">申请加入</n-button>
+            <n-button size="small" @click.stop="goDetail(c.id)">查看详情</n-button>
+          </div>
+        </div>
+      </div>
+      <n-empty v-else description="暂无可加入的公开跑团" size="small" />
+    </div>
+
+    <n-empty v-if="!hosted.length && !joined.length && !discoverList.length" description="暂无跑团，创建一个吧" />
 
     <n-modal v-model:show="showCreate" title="创建跑团" preset="card" style="width: 480px">
       <n-form :model="createForm" label-placement="left" label-width="80">
@@ -76,6 +104,8 @@ const message = useMessage()
 
 const hosted = ref<any[]>([])
 const joined = ref<any[]>([])
+const discoverList = ref<any[]>([])
+const discoverLoading = ref(false)
 const showCreate = ref(false)
 const creating = ref(false)
 const createForm = ref({ title: '', description: '', era: 'MODERN', maxPlayers: 4, rollMethod: 'DICE' })
@@ -109,6 +139,18 @@ async function load() {
   joined.value = res.data.joined || []
 }
 
+async function loadDiscover() {
+  discoverLoading.value = true
+  try {
+    const res = await api.get('/campaigns/discover')
+    discoverList.value = res.data || []
+  } catch {
+    discoverList.value = []
+  } finally {
+    discoverLoading.value = false
+  }
+}
+
 async function doCreate() {
   if (!createForm.value.title.trim()) {
     message.error('请输入标题')
@@ -127,16 +169,32 @@ async function doCreate() {
   }
 }
 
+async function joinCampaign(campaignId: string) {
+  try {
+    await api.post(`/campaigns/${campaignId}/join`)
+    message.success('申请已提交，等待KP审核')
+    // 从发现列表移除
+    discoverList.value = discoverList.value.filter(c => c.id !== campaignId)
+  } catch (e: any) {
+    message.error(e.response?.data?.message || '申请失败')
+  }
+}
+
 function goDetail(id: string) {
   router.push(`/campaigns/${id}`)
 }
 
-onMounted(load)
+onMounted(() => {
+  load()
+  loadDiscover()
+})
 </script>
 
 <style scoped>
 .page { max-width: 1200px; margin: 0 auto; padding: 2rem; }
 .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+.header-left { display: flex; align-items: center; gap: 0.5rem; }
+.header-left h2 { margin: 0; }
 .section { margin-bottom: 2rem; }
 .section h3 { margin-bottom: 1rem; font-size: 1.1rem; color: #333; }
 .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
@@ -144,5 +202,9 @@ onMounted(load)
 .campaign-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
 .card-title { font-size: 1.15rem; font-weight: 600; margin-bottom: 0.5rem; }
 .card-meta { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.5rem; font-size: 0.85rem; color: #666; }
+.card-kp { font-size: 0.85rem; color: #888; margin-bottom: 0.4rem; }
 .card-desc { font-size: 0.9rem; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.discover-card { cursor: default; }
+.card-actions { margin-top: 0.8rem; display: flex; gap: 0.5rem; }
+.discover-loading { padding: 1rem; display: flex; align-items: center; gap: 0.5rem; color: #888; font-size: 0.85rem; }
 </style>

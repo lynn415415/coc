@@ -1,6 +1,14 @@
 <template>
   <div class="auth-page">
     <div class="auth-card">
+      <div class="back-link">
+        <n-button text size="small" @click="router.push('/')">
+          <template #icon>
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+          </template>
+          返回首页
+        </n-button>
+      </div>
       <h2>登录</h2>
       <div>
         <n-form-item label="用户名">
@@ -58,6 +66,7 @@ async function handleLogin() {
   background: white; padding: 2.5rem; border-radius: 16px;
   width: 100%; max-width: 400px; box-shadow: 0 8px 32px rgba(0,0,0,0.2);
 }
+.back-link { margin-bottom: 0.5rem; }
 .auth-card h2 { text-align: center; margin-bottom: 1.5rem; color: #8B4513; }
 .tip { text-align: center; margin-top: 1rem; color: #666; }
 .tip a { color: #8B4513; }
