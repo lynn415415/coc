@@ -34,6 +34,10 @@ import { InviteCodesModule } from './invite-codes/invite-codes.module';
     EventEmitterModule.forRoot(),
     BullModule.forRootAsync({
       useFactory: async () => {
+        const redisUrl = process.env.REDIS_URL;
+        if (redisUrl) {
+          return { redis: redisUrl };
+        }
         const host = process.env.REDIS_HOST;
         const port = process.env.REDIS_PORT ? parseInt(process.env.REDIS_PORT, 10) : 0;
         if (host && port) {
