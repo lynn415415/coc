@@ -1,9 +1,10 @@
-import { PrismaLibSql } from '@prisma/adapter-libsql';
 import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { Pool } from 'pg';
 
-const adapter = new PrismaLibSql({
-  url: process.env['DATABASE_URL'] || 'file:./prisma/dev.db',
-});
+const dbUrl = process.env['DATABASE_URL'] || 'postgresql://coc:coc_password@localhost:5432/coc';
+const pool = new Pool({ connectionString: dbUrl });
+const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
