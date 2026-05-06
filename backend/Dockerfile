@@ -3,7 +3,7 @@ FROM docker.m.daocloud.io/library/node:20-alpine
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci
+RUN npm ci --ignore-scripts
 
 COPY . .
 RUN npx prisma generate
