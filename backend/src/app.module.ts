@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { BullModule } from '@nestjs/bull';
 import { EventEmitterModule } from '@nestjs/event-emitter';
-import { RedisMemoryServer } from 'redis-memory-server';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
@@ -41,6 +40,7 @@ import { InviteCodesModule } from './invite-codes/invite-codes.module';
           return { redis: { host, port } };
         }
         // Fallback: use redis-memory-server for local dev
+        const { RedisMemoryServer } = await import('redis-memory-server');
         const redisServer = new RedisMemoryServer();
         const memHost = await redisServer.getHost();
         const memPort = await redisServer.getPort();
