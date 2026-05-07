@@ -152,6 +152,29 @@ export class InvestigatorsService {
     const ageChanged = dto.age !== undefined && dto.age !== inv.age;
 
     await this.prisma.investigator.update({ where: { id }, data });
+
+    // 更新技能分配
+    if (dto.skills !== undefined) {
+      await this.prisma.investigatorSkill.deleteMany({ where: { investigatorId: id } });
+      if (Array.isArray(dto.skills) && dto.skills.length > 0) {
+        const skillData = dto.skills
+          .filter((s: any) => s.skillId)
+          .map((s: any) => ({
+            investigatorId: id,
+            skillId: Number(s.skillId),
+            customName: s.customName || null,
+            initial: this.clamp(s.initial ?? 0, 0, 99),
+            growth: this.clamp(s.growth ?? 0, 0, 99),
+            occupational: this.clamp(s.occupational ?? 0, 0, 99),
+            interest: this.clamp(s.interest ?? 0, 0, 99),
+            isOccupational: !!s.isOccupational,
+          }));
+        if (skillData.length > 0) {
+          await this.prisma.investigatorSkill.createMany({ data: skillData });
+        }
+      }
+    }
+
     await this.saveEquipments(id, dto);
     return this.calculateDerived(id, ageChanged);
   }
