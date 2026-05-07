@@ -18,16 +18,37 @@ export class UsersController {
     return this.usersService.update(user.userId, data);
   }
 
+  @Get('kp-list')
+  async getKpList() {
+    return this.usersService.getKpUsers();
+  }
+
   @Get()
-  async findAll(@CurrentUser() user: { userId: string }, @Query('page') page?: string, @Query('limit') limit?: string) {
+  async findAll(
+    @CurrentUser() user: { userId: string },
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('role') role?: string,
+  ) {
     const me = await this.usersService.findById(user.userId);
     if (me?.role !== 'ADMIN') throw new ForbiddenException('仅管理员可访问');
-    return this.usersService.findAll(parseInt(page || '1'), parseInt(limit || '20'));
+    return this.usersService.findAll(parseInt(page || '1'), parseInt(limit || '20'), role);
   }
 
   @Get(':id')
   async findOne(@Param('id') id: string) {
     return this.usersService.findById(id);
+  }
+
+  @Patch(':id/role')
+  async updateRole(
+    @CurrentUser() user: { userId: string },
+    @Param('id') id: string,
+    @Body('role') role: string,
+  ) {
+    const me = await this.usersService.findById(user.userId);
+    if (me?.role !== 'ADMIN') throw new ForbiddenException('仅管理员可修改角色');
+    return this.usersService.updateRole(id, role);
   }
 
   @Delete(':id')

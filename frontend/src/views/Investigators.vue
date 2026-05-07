@@ -63,8 +63,9 @@ onMounted(async () => {
 function statusType(status: string) {
   const map: Record<string, string> = {
     DRAFT: 'default',
-    PENDING: 'warning',
+    SUBMITTED: 'warning',
     APPROVED: 'success',
+    REJECTED: 'error',
     ARCHIVED: 'error',
   }
   return map[status] || 'default'
@@ -73,8 +74,9 @@ function statusType(status: string) {
 function statusText(status: string) {
   const map: Record<string, string> = {
     DRAFT: '草稿',
-    PENDING: '待审核',
+    SUBMITTED: '待审核',
     APPROVED: '已通过',
+    REJECTED: '已驳回',
     ARCHIVED: '已归档',
   }
   return map[status] || status

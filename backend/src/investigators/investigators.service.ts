@@ -242,14 +242,67 @@ export class InvestigatorsService {
     }
   }
 
-  async submit(id: string) {
+  async submit(id: string, reviewerId?: string) {
     const inv = await this.prisma.investigator.findUnique({ where: { id } });
     if (!inv) throw new NotFoundException('调查员不存在');
-    if (inv.status !== 'DRAFT') throw new BadRequestException('只有草稿状态可以提交');
+    if (inv.status !== 'DRAFT' && inv.status !== 'REJECTED') throw new BadRequestException('只有草稿或被驳回状态可以提交');
 
     return this.prisma.investigator.update({
       where: { id },
-      data: { status: 'APPROVED' },
+      data: {
+        status: 'SUBMITTED',
+        reviewerId: reviewerId || null,
+        submittedAt: new Date(),
+        reviewNote: null,
+      },
+    });
+  }
+
+  async approve(id: string, reviewerId: string) {
+    const inv = await this.prisma.investigator.findUnique({ where: { id } });
+    if (!inv) throw new NotFoundException('调查员不存在');
+    if (inv.status !== 'SUBMITTED') throw new BadRequestException('只有待审核状态可以审批');
+
+    return this.prisma.investigator.update({
+      where: { id },
+      data: {
+        status: 'APPROVED',
+        reviewerId,
+        reviewedAt: new Date(),
+      },
+    });
+  }
+
+  async reject(id: string, reviewerId: string, note: string) {
+    const inv = await this.prisma.investigator.findUnique({ where: { id } });
+    if (!inv) throw new NotFoundException('调查员不存在');
+    if (inv.status !== 'SUBMITTED') throw new BadRequestException('只有待审核状态可以驳回');
+
+    return this.prisma.investigator.update({
+      where: { id },
+      data: {
+        status: 'REJECTED',
+        reviewerId,
+        reviewNote: note || '未通过审核',
+        reviewedAt: new Date(),
+      },
+    });
+  }
+
+  async getReviewQueue(reviewerId: string) {
+    return this.prisma.investigator.findMany({
+      where: {
+        status: 'SUBMITTED',
+        OR: [
+          { reviewerId },
+          { reviewerId: null },
+        ],
+      },
+      include: {
+        user: { select: { id: true, username: true, nickname: true } },
+        occupation: { select: { id: true, name: true } },
+      },
+      orderBy: { submittedAt: 'asc' },
     });
   }
 

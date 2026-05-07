@@ -7,6 +7,8 @@
           <router-link to="/investigators">我的角色卡</router-link>
           <router-link to="/campaigns">跑团</router-link>
           <router-link to="/config">配置库</router-link>
+          <router-link v-if="auth.isKP" to="/kp/review">角色卡审核</router-link>
+          <router-link v-if="auth.isAdmin" to="/admin/users">用户管理</router-link>
           <span class="user-info">{{ auth.user?.nickname }}</span>
           <n-button size="small" @click="auth.logout()">退出</n-button>
         </template>

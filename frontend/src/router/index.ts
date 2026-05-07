@@ -55,6 +55,18 @@ const router = createRouter({
       component: () => import('@/views/ConfigLibrary.vue'),
       meta: { requiresAuth: true },
     },
+    {
+      path: '/admin/users',
+      name: 'AdminUsers',
+      component: () => import('@/views/AdminUsers.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/kp/review',
+      name: 'KPReview',
+      component: () => import('@/views/KPReview.vue'),
+      meta: { requiresAuth: true },
+    },
   ],
 })
 

@@ -301,13 +301,35 @@
       </n-tab-pane>
     </n-tabs>
 
+    <!-- Rejection notice -->
+    <div v-if="inv.status === 'REJECTED'" class="reject-notice">
+      <n-alert type="error" title="角色卡被驳回">
+        <p v-if="inv.reviewNote">原因：{{ inv.reviewNote }}</p>
+        <p v-else>未通过审核，请修改后重新提交。</p>
+      </n-alert>
+    </div>
+
     <div class="actions">
       <n-space>
-        <n-button v-if="inv.status === 'DRAFT'" @click="goEdit">编辑</n-button>
-        <n-button v-if="inv.status === 'DRAFT'" type="primary" @click="submit">提交审核</n-button>
+        <n-button v-if="inv.status === 'DRAFT' || inv.status === 'REJECTED'" @click="goEdit">编辑</n-button>
+        <n-button v-if="inv.status === 'DRAFT' || inv.status === 'REJECTED'" type="primary" @click="showSubmitDialog">提交审核</n-button>
+        <n-button v-if="isKP && inv.status === 'SUBMITTED'" type="success" @click="doApprove">通过审核</n-button>
+        <n-button v-if="isKP && inv.status === 'SUBMITTED'" type="warning" @click="showRejectModal = true">驳回</n-button>
         <n-button type="error" @click="confirmDelete">删除</n-button>
       </n-space>
     </div>
+
+    <!-- Submit: select KP -->
+    <n-modal v-model:show="submitVisible" preset="dialog" title="提交审核" positive-text="提交" negative-text="取消" @positive-click="doSubmit">
+      <p>请选择一位KP审核你的角色卡：</p>
+      <n-select v-model:value="selectedKp" :options="kpOptions" placeholder="选择KP" :loading="kpLoading" />
+    </n-modal>
+
+    <!-- Reject modal for KP -->
+    <n-modal v-model:show="showRejectModal" preset="dialog" title="驳回角色卡" positive-text="确认驳回" negative-text="取消" @positive-click="doReject">
+      <p>请填写驳回原因：</p>
+      <n-input v-model:value="rejectNote" type="textarea" placeholder="驳回原因..." :rows="3" />
+    </n-modal>
 
   </div>
 </template>
@@ -317,6 +339,9 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useMessage, useDialog } from 'naive-ui'
 import api from '@/api/client'
+import { investigatorsApi } from '@/api/investigators'
+import { usersApi } from '@/api/users'
+import { useAuthStore } from '@/stores/auth'
 
 const attrMap: Record<string, string> = {
   str: '力量', con: '体质', siz: '体型', dex: '敏捷',
@@ -327,9 +352,22 @@ const route = useRoute()
 const router = useRouter()
 const message = useMessage()
 const dialog = useDialog()
+const auth = useAuthStore()
 const inv = ref<any>(null)
 const portraitHover = ref(false)
 const uploading = ref(false)
+
+const isKP = computed(() => auth.user?.role === 'KP' || auth.user?.role === 'ADMIN')
+
+// Submit with KP selection
+const submitVisible = ref(false)
+const selectedKp = ref<string | null>(null)
+const kpOptions = ref<any[]>([])
+const kpLoading = ref(false)
+
+// Reject
+const showRejectModal = ref(false)
+const rejectNote = ref('')
 
 const skillCategories = computed(() => {
   if (!inv.value?.skills) return []
@@ -404,13 +442,57 @@ function goEdit() {
   router.push(`/investigator/${inv.value.id}/edit`)
 }
 
-async function submit() {
+async function showSubmitDialog() {
+  submitVisible.value = true
+  selectedKp.value = null
+  kpLoading.value = true
   try {
-    await api.post(`/investigators/${inv.value.id}/submit`)
-    message.success('已提交审核')
-    inv.value.status = 'PENDING'
+    const res = await usersApi.getKpList()
+    kpOptions.value = res.data.map((u: any) => ({
+      label: `${u.nickname || u.username} (${u.role})`,
+      value: u.id,
+    }))
+  } catch (e: any) {
+    message.error('加载KP列表失败')
+  } finally {
+    kpLoading.value = false
+  }
+}
+
+async function doSubmit() {
+  if (!selectedKp.value) {
+    message.warning('请选择一位KP')
+    return false
+  }
+  try {
+    await investigatorsApi.submit(inv.value.id, selectedKp.value)
+    message.success('已提交审核，请等待KP审核')
+    inv.value.status = 'SUBMITTED'
+    submitVisible.value = false
   } catch (e: any) {
     message.error(e.response?.data?.message || '提交失败')
+  }
+}
+
+async function doApprove() {
+  try {
+    await investigatorsApi.approve(inv.value.id)
+    message.success('已通过审核')
+    inv.value.status = 'APPROVED'
+  } catch (e: any) {
+    message.error(e.response?.data?.message || '操作失败')
+  }
+}
+
+async function doReject() {
+  try {
+    await investigatorsApi.reject(inv.value.id, rejectNote.value || '未通过审核')
+    message.success('已驳回')
+    inv.value.status = 'REJECTED'
+    inv.value.reviewNote = rejectNote.value || '未通过审核'
+    showRejectModal.value = false
+  } catch (e: any) {
+    message.error(e.response?.data?.message || '操作失败')
   }
 }
 
@@ -433,11 +515,11 @@ function confirmDelete() {
 }
 
 function statusType(status: string) {
-  const map: Record<string, string> = { DRAFT: 'default', PENDING: 'warning', APPROVED: 'success', ARCHIVED: 'error' }
+  const map: Record<string, string> = { DRAFT: 'default', SUBMITTED: 'warning', APPROVED: 'success', REJECTED: 'error', ARCHIVED: 'error' }
   return map[status] || 'default'
 }
 function statusText(status: string) {
-  const map: Record<string, string> = { DRAFT: '草稿', PENDING: '待审核', APPROVED: '已通过', ARCHIVED: '已归档' }
+  const map: Record<string, string> = { DRAFT: '草稿', SUBMITTED: '待审核', APPROVED: '已通过', REJECTED: '已驳回', ARCHIVED: '已归档' }
   return map[status] || status
 }
 function eraText(era: string) {
@@ -515,6 +597,7 @@ function printSheet() {
 .story h4 { color: #8B4513; margin-bottom: 0.5rem; }
 .story p { color: #555; line-height: 1.6; margin-bottom: 1rem; }
 .actions { margin-top: 1.5rem; }
+.reject-notice { margin-bottom: 1rem; }
 
 /* MMO Equipment Panel */
 .equip-panel { display: flex; gap: 2rem; align-items: flex-start; justify-content: center; padding: 1.5rem; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border-radius: 12px; margin-bottom: 1.5rem; min-height: 320px; }

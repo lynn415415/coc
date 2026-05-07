@@ -22,6 +22,7 @@ model User {
 
   inviteCode    InviteCode? @relation(fields: [inviteCodeId], references: [id])
   investigators Investigator[]
+  reviewedInvestigators Investigator[] @relation("InvestigatorReviewer")
   campaigns     Campaign[]       @relation("CampaignKp")
   memberships   CampaignMember[]
   actionRecords ActionRecord[]
@@ -94,12 +95,17 @@ model Investigator {
   notes                   String?
   experiencePackage       String?
   status                  String    @default("DRAFT")
+  reviewerId              String?
+  reviewNote              String?
+  submittedAt             DateTime?
+  reviewedAt              DateTime?
   campaignId              String?
   version                 Int       @default(1)
   createdAt               DateTime  @default(now())
   updatedAt               DateTime  @updatedAt
 
   user          User                @relation(fields: [userId], references: [id])
+  reviewer      User?               @relation("InvestigatorReviewer", fields: [reviewerId], references: [id])
   occupation    Occupation?         @relation(fields: [occupationId], references: [id])
   skills        InvestigatorSkill[]
   items         InvestigatorItem[]

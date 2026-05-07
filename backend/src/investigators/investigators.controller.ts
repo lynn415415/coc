@@ -1,9 +1,10 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards, UseInterceptors, UploadedFile, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { InvestigatorsService } from './investigators.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { UploadService } from '../upload/upload.service';
+import { UsersService } from '../users/users.service';
 
 @Controller('investigators')
 @UseGuards(JwtAuthGuard)
@@ -11,6 +12,7 @@ export class InvestigatorsController {
   constructor(
     private readonly service: InvestigatorsService,
     private readonly uploadService: UploadService,
+    private readonly usersService: UsersService,
   ) {}
 
   @Post()
@@ -21,6 +23,13 @@ export class InvestigatorsController {
   @Get()
   async list(@CurrentUser() user: { userId: string }, @Query('status') status?: string) {
     return this.service.list(user.userId, status);
+  }
+
+  @Get('review-queue')
+  async reviewQueue(@CurrentUser() user: { userId: string }) {
+    const me = await this.usersService.findById(user.userId);
+    if (me?.role !== 'KP' && me?.role !== 'ADMIN') throw new ForbiddenException('仅KP和管理员可查看审核队列');
+    return this.service.getReviewQueue(user.userId);
   }
 
   @Get(':id')
@@ -34,8 +43,22 @@ export class InvestigatorsController {
   }
 
   @Post(':id/submit')
-  async submit(@Param('id') id: string) {
-    return this.service.submit(id);
+  async submit(@Param('id') id: string, @Body('reviewerId') reviewerId?: string) {
+    return this.service.submit(id, reviewerId);
+  }
+
+  @Post(':id/approve')
+  async approve(@CurrentUser() user: { userId: string }, @Param('id') id: string) {
+    const me = await this.usersService.findById(user.userId);
+    if (me?.role !== 'KP' && me?.role !== 'ADMIN') throw new ForbiddenException('仅KP和管理员可审核');
+    return this.service.approve(id, user.userId);
+  }
+
+  @Post(':id/reject')
+  async reject(@CurrentUser() user: { userId: string }, @Param('id') id: string, @Body('note') note?: string) {
+    const me = await this.usersService.findById(user.userId);
+    if (me?.role !== 'KP' && me?.role !== 'ADMIN') throw new ForbiddenException('仅KP和管理员可驳回');
+    return this.service.reject(id, user.userId, note || '');
   }
 
   @Post(':id/calculate')
